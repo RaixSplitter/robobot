@@ -1,0 +1,9 @@
+[0:00:13.817045330] [650] [1;32m INFO [1;37mCamera [1;34mcamera_manager.cpp:327 [0mlibcamera v0.4.0+50-83cb8101
+[0:00:13.847704231] [1175] [1;33m WARN [1;37mRPiSdn [1;34msdn.cpp:40 [0mUsing legacy SDN tuning - please consider moving SDN inside rpi.denoise
+[0:00:13.850002353] [1175] [1;33m WARN [1;37mRPI [1;34mvc4.cpp:393 [0mMismatch between Unicam and CamHelper for embedded data usage!
+[0:00:13.850713919] [1175] [1;32m INFO [1;37mRPI [1;34mvc4.cpp:447 [0mRegistered camera /base/soc/i2c0mux/i2c@1/imx219@10 to Unicam device /dev/media4 and ISP device /dev/media1
+[0:00:13.850796084] [1175] [1;32m INFO [1;37mRPI [1;34mpipeline_base.cpp:1121 [0mUsing configuration file '/usr/share/libcamera/pipeline/rpi/vc4/rpi_apps.yaml'
+[0:00:13.863446104] [650] [1;32m INFO [1;37mCamera [1;34mcamera.cpp:1202 [0mconfiguring streams: (0) 820x616-XBGR8888 (1) 1640x1232-SBGGR10_CSI2P
+[0:00:13.864673404] [1175] [1;32m INFO [1;37mRPI [1;34mvc4.cpp:622 [0mSensor: /base/soc/i2c0mux/i2c@1/imx219@10 - Selected sensor format: 1640x1232-SBGGR10_1X10 - Selected unicam format: 1640x1232-pBAA
+[0:00:13.886061173] [650] [1;32m INFO [1;37mCamera [1;34mcamera.cpp:1202 [0mconfiguring streams: (0) 820x616-XBGR8888 (1) 1640x1232-SBGGR10_CSI2P
+[0:00:13.888319369] [1175] [1;32m INFO [1;37mRPI [1;34mvc4.cpp:622 [0mSensor: /base/soc/i2c0mux/i2c@1/imx219@10 - Selected sensor format: 1640x1232-SBGGR10_1X10 - Selected unicam format: 1640x1232-pBAA

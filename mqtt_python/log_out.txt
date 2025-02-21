@@ -1,0 +1,106 @@
+% Starting
+% Command line argument '--silent'=False
+% ConnectedOut to MQTT Broker localhost on 1883
+% Connected to MQTT Broker localhost on 1883
+% GPIO all ok
+% Robot (srobot.py) data stream OK; 7 loops.
+% IR sensor (sir.py):: got data stream; 0 loops.
+% Teensy info 1739543398.1291 # got confw: r1=0.075, r2=0.075, G=19, PPR=68, WB=0.23
+% SPose.py:: Robot config info 1 at 0:00:00.332891
+%    - Wheel radius (left,right): (0.075, 0.075 m
+%    - Encoder tick per rev: 68.0
+%    - Gearing: 19.0:1
+%    - Wheel base: 0.23 m
+%    - Encoder reversed: 0.0 (1 = reversed)
+% Pose:: configured, and got data stream; 1 loops.
+% IMU (simu.py):: no data updates after 21 wait loops (continues).
+% Edge (sedge.py):: turns on line sensor
+% Camera available: size (616x820, 3 channels)
+% Edge (sedge.py):: got data stream; after 1
+% (uservice.py) Setup finished with connected=True
+% Starting
+LineCtrl:: PIDrecalculate: T=0.10 -> 9.60 ms
+%% Lead: tauZ 0.800 sec, tauP = 0.150 sec, T = 9.596 ms
+
+%%       tauZ2pT = 1.6096, tauZ2mT = 1.5904, tauP2pT = 0.3096, tauP2mT = 0.3096
+% Edge::followLine: ctrl: e=0.152, u=0.457, y=1.000 -> 0.250 1.000 1739543398.595033
+% Edge::followLine: ctrl: e=0.128, u=0.383, y=0.297 -> 0.250 0.297 1739543398.79505
+% State change from -1 to 12
+% Edge::followLine: ctrl: e=0.065, u=0.194, y=-0.291 -> 0.250 -0.291 1739543398.9950674
+% Edge::followLine: ctrl: e=-0.030, u=-0.091, y=-1.000 -> 0.250 -1.000 1739543399.1943424
+% I am now accepted as master of robot Emil
+
+% Edge::followLine: ctrl: e=0.044, u=0.132, y=0.558 -> 0.250 0.558 1739543399.3943055
+% Edge::followLine: ctrl: e=0.095, u=0.284, y=0.694 -> 0.250 0.694 1739543399.5947816
+% Edge::followLine: ctrl: e=-0.349, u=-1.047, y=-1.000 -> 0.250 -1.000 1739543399.794289
+% Edge::followLine: ctrl: e=-0.312, u=-0.936, y=-0.396 -> 0.250 -0.396 1739543399.9943392
+% Edge::followLine: ctrl: e=-0.207, u=-0.620, y=0.287 -> 0.250 0.287 1739543400.1942122
+% Edge::followLine: ctrl: e=-0.027, u=-0.080, y=1.000 -> 0.250 1.000 1739543400.394916
+% Edge::followLine: ctrl: e=-0.115, u=-0.345, y=-1.000 -> 0.250 -1.000 1739543400.5941968
+% Edge::followLine: ctrl: e=-0.112, u=-0.336, y=-0.321 -> 0.250 -0.321 1739543400.7949402
+% Edge::followLine: ctrl: e=0.014, u=0.041, y=0.985 -> 0.250 0.985 1739543400.9942906
+% Edge::followLine: ctrl: e=0.344, u=1.033, y=0.258 -> 0.250 0.258 1739543401.1949928
+% Edge::followLine: ctrl: e=0.209, u=0.626, y=-0.574 -> 0.250 -0.574 1739543401.3948483
+% Edge::followLine: ctrl: e=0.142, u=0.426, y=-0.340 -> 0.250 -0.340 1739543401.5951307
+% Edge::followLine: ctrl: e=0.208, u=0.625, y=1.000 -> 0.250 1.000 1739543401.7958007
+% Edge::followLine: ctrl: e=0.202, u=0.607, y=0.493 -> 0.250 0.493 1739543401.9955878
+% Edge::followLine: ctrl: e=0.046, u=0.137, y=-1.000 -> 0.250 -1.000 1739543402.195257
+% Edge::followLine: ctrl: e=-0.381, u=-1.143, y=-0.255 -> 0.250 -0.255 1739543402.3956163
+% Edge::followLine: ctrl: e=-0.265, u=-0.796, y=0.247 -> 0.250 0.247 1739543402.5960467
+% Edge::followLine: ctrl: e=-0.211, u=-0.632, y=0.003 -> 0.250 0.003 1739543402.7950933
+% Edge::followLine: ctrl: e=-0.241, u=-0.724, y=-0.928 -> 0.250 -0.928 1739543402.9955773
+% Edge::followLine: ctrl: e=-0.185, u=-0.555, y=-0.068 -> 0.250 -0.068 1739543403.1961052
+% Edge::followLine: ctrl: e=-0.061, u=-0.183, y=0.864 -> 0.250 0.864 1739543403.3959806
+% Edge::followLine: ctrl: e=0.201, u=0.604, y=-0.076 -> 0.250 -0.076 1739543403.5964146
+% Edge::followLine: ctrl: e=0.105, u=0.314, y=-0.535 -> 0.250 -0.535 1739543403.796729
+% Edge::followLine: ctrl: e=0.087, u=0.260, y=-0.087 -> 0.250 -0.087 1739543403.9971101
+% Edge::followLine: ctrl: e=0.123, u=0.369, y=0.434 -> 0.250 0.434 1739543404.1970046
+% Edge::followLine: ctrl: e=0.023, u=0.069, y=-0.706 -> 0.250 -0.706 1739543404.3967807
+% Edge::followLine: ctrl: e=-0.049, u=-0.148, y=-0.798 -> 0.250 -0.798 1739543404.5965662
+% Edge::followLine: ctrl: e=0.110, u=0.330, y=1.000 -> 0.250 1.000 1739543404.7968543
+% Edge::followLine: ctrl: e=0.107, u=0.320, y=0.353 -> 0.250 0.353 1739543404.9967513
+% Edge::followLine: ctrl: e=-0.012, u=-0.035, y=-0.922 -> 0.250 -0.922 1739543405.1965244
+% Edge::followLine: ctrl: e=-0.280, u=-0.839, y=0.206 -> 0.250 0.206 1739543405.3969288
+% Edge::followLine: ctrl: e=-0.155, u=-0.464, y=0.633 -> 0.250 0.633 1739543405.5968287
+% Edge::followLine: ctrl: e=-0.165, u=-0.494, y=-0.337 -> 0.250 -0.337 1739543405.7961528
+% Edge::followLine: ctrl: e=-0.289, u=-0.866, y=-0.376 -> 0.250 -0.376 1739543405.9967291
+% Edge::followLine: ctrl: e=-0.155, u=-0.465, y=0.644 -> 0.250 0.644 1739543406.1970289
+% Edge::followLine: ctrl: e=-0.084, u=-0.252, y=0.487 -> 0.250 0.487 1739543406.3976684
+% Edge::followLine: ctrl: e=-0.192, u=-0.577, y=-1.000 -> 0.250 -1.000 1739543406.5969446
+% Edge::followLine: ctrl: e=-0.158, u=-0.475, y=-0.196 -> 0.250 -0.196 1739543406.796942
+% Edge::followLine: ctrl: e=0.001, u=0.003, y=1.000 -> 0.250 1.000 1739543406.9974163
+% Edge::followLine: ctrl: e=0.888, u=2.664, y=1.000 -> 0.250 1.000 1739543407.196873
+% Edge::followLine: ctrl: e=0.952, u=2.856, y=1.000 -> 0.250 1.000 1739543407.3972754
+% Edge::followLine: ctrl: e=0.924, u=2.772, y=1.000 -> 0.250 1.000 1739543407.5974672
+% Edge::followLine: ctrl: e=0.791, u=2.372, y=1.000 -> 0.250 1.000 1739543407.7975912
+% Edge::followLine: ctrl: e=0.000, u=0.000, y=-1.000 -> 0.250 -1.000 1739543407.9970136
+% Edge::followLine: ctrl: e=0.000, u=0.000, y=-0.278 -> 0.250 -0.278 1739543408.1979718
+% Edge::followLine: ctrl: e=1.141, u=3.422, y=1.000 -> 0.250 1.000 1739543408.398112
+% State change from 12 to 14
+% --- state 14, h = 0.2506, t=0.406
+% --- state 14, h = 0.4805, t=0.802
+% --- state 14, h = 0.7009, t=1.197
+% --- state 14, h = 0.9118, t=1.602
+% --- state 14, h = 1.1307, t=1.999
+% --- state 14, h = 1.3559, t=2.404
+% --- state 20, h = 1.5747, t=2.800
+% State change from 14 to 20
+% Saved image image_2025_Feb_14_153013_039.jpg
+% State change from 20 to 99
+% Mission finished/aborted; state=99
+% shutting down
+% Teensy info 1739543419.0037 # stopping
+% Teensy info 1739543419.0039 # stopping
+% Service - thread stopped
+% Camera thread stopped
+% Service - thread stopped
+% Pose terminated
+% Robot terminated
+% Pose terminated
+% IR terminated
+% Edge (sedge.py):: turn off line sensor
+% Edge (sedge.py):: terminated
+% Camera terminated
+% GPIO terminated
+% logfile closed
+% Main Terminated
