@@ -188,3 +188,4 @@ gitrepo
 gitrepo.pub
 *.err
 *.out
+/data
