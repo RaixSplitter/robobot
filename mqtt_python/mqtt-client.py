@@ -49,44 +49,14 @@ class State(Enum):
 	CAMERA_CALIBRATION = 1
 	FOLLOW_LINE = 2
 	LOST = 3
+	TURN_LEFT = 4
+	TURN_RIGHT = 5
+	TRY_RECOVER = 6
 	END_PROGRAM = 1000
 
 
 # set title of process, so that it is not just called Python
 setproctitle("mqtt-client")
-
-############################################################
-
-def take_image(save: bool = True) -> bool:
-	if not cam.useCam:
-		return False
-
-	ok, img, imgTime = cam.getImage()
-	if not ok: # size(img) == 0):
-		if cam.imageFailCnt < 5:
-			print("% Failed to get image.")
-			return False
-	else:
-		h, w, ch = img.shape
-		if not service.args.silent:
-			# print(f"% At {imgTime}, got image {cam.cnt} of size= {w}x{h}")
-			pass
-		# TODO: Commented out
-		# edge.paint(img)
-		# cv2.imshow('frame for analysis', img)
-		if not gpio.onPi:
-			cv2.imshow('frame for analysis', img)
-		if save:
-			fn = f"images/image_{imgTime.strftime('%Y_%b_%d_%H%M%S_')}{cam.cnt:03d}.jpg"
-			cv2.imwrite(fn, img)
-			if not service.args.silent:
-				print(f"% Saved image {fn}")
-		return True
-
-
-def time_in_state(start_start_time: float) -> float:
-	return t.time() - start_start_time
-
 
 def loop():
 	""" """
@@ -94,42 +64,58 @@ def loop():
 	prev_state = None
 
 	state_start_time = t.time()
-	n_images = 0
-	n_frames_lost = 0
+	n_images = 0		# how many images have we taken, useful for camera calibration
+	time_to_turn = 0.5	# how long does a normal left or right hand turn take
+	max_lost_time = 1.0 # how long can we be lost before trying to recover
+	move_speed = 0.1
 
 	if not service.args.now:
 		print("% Ready, press start button")
 		service.send(service.topicCmd + "T0/leds","16 30 30 0") # LED 16: yellow - waiting
 	
 	# main state machine
-	edge.set_line_control_targets(0, 0) # make sure line control is off
+	edge.set_line_control_targets(0, 0)
 	while not (service.stop or gpio.stop()):
 
-		pose.printPose()
+		# pose.printPose()
 
 		if state == State.START:
 			start = gpio.start() or service.args.now
-			# start = True
+			
+			# start = True # NOTE: Temporary overwrite to not need to press button
+		
 			if start:
 				print("% Starting")
 				state = State.FOLLOW_LINE
-				# service.send(service.topicCmd + "T0/leds","16 0 0 30") # blue: running
-				# service.send(service.topicCmd + "ti/rc","0.0 0.0") # (forward m/s, turnrate rad/sec)
-				# # follow line (at 0.25cm/s)
-				# edge.lineControl(0.25, 0.0) # m/s and position on line -2.0..2.0
-				# # pose.tripBreset() # use trip counter/timer B
-				# pose.printPose()
-
 
 		elif state == State.FOLLOW_LINE:
-			edge.set_line_control_targets(target_velocity = 0.1, target_position = 0.0)
-			if not edge.lineValid:
+			edge.set_line_control_targets(target_velocity = move_speed, target_position = 0.0)
+			if not edge.on_line:
 				state = State.LOST
+			
+			# TODO: Here we want some logic to determine whether to turn left or right
+			if edge.on_crossroad:
+				state = State.TURN_LEFT
         
+		elif state == State.TURN_LEFT:
+			edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
+			service.send(service.topicCmd + "ti/rc", "0.0 0.8") # turn left
+			if time_to_turn < time_in_state(state_start_time):
+				state = State.FOLLOW_LINE
+
+		elif state == State.TURN_RIGHT:
+			edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
+			service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn right
+			if time_to_turn < time_in_state(state_start_time):
+				state = State.FOLLOW_LINE
+
 		elif state == State.LOST:
-			print(f"Robot lost")
+			if max_lost_time < time_in_state(state_start_time):
+				state = State.TRY_RECOVER
+
+		elif state == State.TRY_RECOVER:
 			edge.set_line_control_targets(target_velocity = -0.1, target_position = 0.0)
-			if edge.lineValid:
+			if edge.on_line:
 				state = State.FOLLOW_LINE
 
 		elif state == State.CAMERA_CALIBRATION:
@@ -145,52 +131,20 @@ def loop():
 			if not cam.useCam or 30 < time_in_state(state_start_time):
 				state = State.END_PROGRAM
 
-		# elif state == 12: # following line
-		# 	if edge.lineValidCnt == 0: #  or pose.tripBtimePassed() > 10:
-		# 		n_frames_lost += 1
-		# 		if 10 < n_frames_lost:
-		# 			print("ACTUALLY LOST")
-		# 			state = 20
-		# 		# no more line
-		# 		# edge.lineControl(0,0) # stop following line
-		# 		# pose.tripBreset()
-		# 		# service.send(service.topicCmd + "ti/rc","0.1 0.5") # turn left
-		# 		print("LOST LINE", pose.tripBtimePassed(), edge.lineValidCnt)
-		# 		# state = 12 # turn left
-		# 	else:
-		# 		n_frames_lost = 0
 
-		# elif state == 14: # turning left
-		# 	if pose.tripBh > np.pi/2 or pose.tripBtimePassed() > 10:
-		# 		state = 20 # finished   =17 go look for line
-		# 		service.send(service.topicCmd + "ti/rc","0 0") # stop for images
-		# 	print(f"% --- state {state}, h = {pose.tripBh:.4f}, t={pose.tripBtimePassed():.3f}")
 
-		# allow openCV to handle imshow (if in use)
-		# images are almost useless while turning, but
-		# used here to illustrate some image processing (painting)
-		if cam.useCam:
-			take_image(save = False)
-			key = cv2.waitKey(100) # ms
-			if key > 0: # e.g. Esc (key=27) pressed with focus on image
-				break
+		# NOTE: This fails in vscode instance, must be in ssh -X ... forwarding stream
+		# stream_video()
 		
 		if state != prev_state:
 			print(f"% Changed state from {prev_state} to {state}")
 			state_start_time = t.time()
 			prev_state = state
 
-		# note state change and reset state timer
-		# if state.value != oldstate:
-		# 	flog.write(state.value)
-		# 	flog.writeRemark(f"% State change from {oldstate} to {state}")
-		# 	print(f"% State change from {oldstate} to {state}")
-		# 	oldstate = state
-		# 	stateTime = datetime.now()
-		# do not loop too fast
-		t.sleep(0.1)
 		# tell interface that we are alive
 		service.send(service.topicCmd + "ti/alive", str(service.startTime))
+		t.sleep(0.1)
+
 
 	# end of mission, turn LEDs off and stop
 	service.send(service.topicCmd + "T0/leds","16 0 0 0") 
@@ -199,7 +153,54 @@ def loop():
 	service.send(service.topicCmd + "ti/rc","0 0")
 	t.sleep(0.05)
 
-############################################################
+
+def stream_video(draw_debug_overlay: bool = False) -> bool: 
+	"""
+	Stream video to X11. Remember to run ssh with x-port forwarding
+		ssh -X local@10.197.218.176
+	"""
+	if not cam.useCam:
+		return False
+	ok, img, imgTime = cam.getImage()
+	if not ok:
+		return False
+	if draw_debug_overlay:
+		edge.paint(img)
+	cv2.imshow('Video stream', img)
+	cv2.waitKey(1)
+	return True
+
+
+def take_image(save: bool = True) -> bool:
+	""" """
+	if not cam.useCam:
+		return False
+
+	ok, img, imgTime = cam.getImage()
+	if not ok:
+		if cam.imageFailCnt < 5:
+			print("% Failed to get image.")
+			return False
+	else:
+		h, w, ch = img.shape
+		if not service.args.silent:
+			# print(f"% At {imgTime}, got image {cam.cnt} of size= {w}x{h}")
+			pass
+		# TODO: Commented out
+		# edge.paint(img)
+		if not gpio.onPi:
+			cv2.imshow('frame for analysis', img)
+		if save:
+			fn = f"images/image_{imgTime.strftime('%Y_%b_%d_%H%M%S_')}{cam.cnt:03d}.jpg"
+			cv2.imwrite(fn, img)
+			if not service.args.silent:
+				print(f"% Saved image {fn}")
+		return True
+
+
+def time_in_state(start_start_time: float) -> float:
+	return t.time() - start_start_time
+
 
 if __name__ == "__main__":
 	print("% Starting")
