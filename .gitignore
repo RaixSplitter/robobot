@@ -189,3 +189,7 @@ gitrepo.pub
 *.err
 *.out
 images/
+*_err.txt
+*_out.txt
+ccc.txt
+*.err
