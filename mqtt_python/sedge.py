@@ -40,42 +40,21 @@ class SEdge:
 	edge_n = [0, 0, 0 , 0, 0, 0, 0, 0]
 	edge_nUpdCnt = 0
 	edge_nTime = datetime.now()
-	edge_nInterval = 0
-	edgeIntervalSetup = 0.1
+	edge_update_interval = 0.0 # how many seconds between the edge sensor messages
+
 	# line detection levels
-	lineValidThreshold = 550 # 1000 is calibrated white
-	crossingThreshold = 500 # average above this is assumed to be crossing line
-	# level for relevant white values
-	low = lineValidThreshold - 100
+	line_valid_threshold = 550 # 1000 is calibrated white
+	line_crossroad_threshold = 700 # average above this is assumed to be crossing line
+	low_threshold = line_valid_threshold - 100
 	
 	# line detection values
 	target_position = 0.0
-	position = 0.0
-	lineValid = False
-	crossingLine = False
-	#
-	topicLip = ""
+	position_on_line = 0.0
+	on_line = False
+	on_crossroad = False
+
 	sendCalibRequest = False
-	#
-	# follow line controller
 	do_line_control = False
-	# try with a P-controller
-	lineKp = 3.0
-	lineTauZ = 0.8
-	lineTauP = 0.15
-	# Lead pre-calculated factors
-	tauP2pT = 1.0
-	tauP2mT = 0.0
-	tauZ2pT = 1.0
-	tauZ2mT = 0.0
-	# control values
-	lineE1 = 0.0 # old error * Kp (rad/s)
-	lineY1 = 0.0 # old control output (rad/s)
-	lineY = 0.0  # control output (rad/s)
-	# management
-	topicRc = ""
-	lostLineCnt = 0
-	u = 0 # turn rate control signal
 
     # PID loop
 	Kp = 0.5
@@ -83,7 +62,7 @@ class SEdge:
 	Kd = 0.4
 	total_error = 0.0
 	previous_error = 0.0
-	pid_i = 0.0
+	cumulative_error = 0.0
 
 	def setup(self):
 		from uservice import service
@@ -178,8 +157,8 @@ class SEdge:
 					f"{self.edge_n[5]}, " +
 					f"{self.edge_n[6]}, " +
 					f"{self.edge_n[7]})" +
-					f" {self.edge_nInterval:.2f} ms " +
-					f" {self.position:.2f} " +
+					f" {self.edge_update_interval:.2f} ms " +
+					f" {self.position_on_line:.2f} " +
 					str(self.edge_nUpdCnt))
 	def printnw(self):
 		from uservice import service
@@ -236,15 +215,16 @@ class SEdge:
 				self.edge_n[7] = int(gg[8])
 				t1 = self.edge_nTime
 				if self.edge_nUpdCnt == 2:
-					self.edge_nInterval = (t1 -t0).total_seconds()*1000
+					self.edge_update_interval = (t1-t0).total_seconds()*1000
 				elif self.edge_nUpdCnt > 2:
-					self.edge_nInterval = (self.edge_nInterval * 99 + (t1 -t0).total_seconds()*1000) / 100
+					self.edge_update_interval = (self.edge_update_interval * 99 + (t1-t0).total_seconds()*1000) / 100
 				self.edge_nUpdCnt += 1
 				# calculate line position - actually center of gravity of white value
 				# - missing edge detection
 				# got new normalized values
 				# debug save as a remark with timestamp
 				# flog.writeDataString(f" {msg}");
+
 				self.detect_line()
 				# use to control, if active
 				if self.do_line_control:
@@ -279,31 +259,28 @@ class SEdge:
 		average = sum(self.edge_n) / len(self.edge_n)
 
 		# detect if we are at a crossroad
-		self.crossingLine = self.crossingThreshold <= average
+		self.on_crossroad = self.line_crossroad_threshold <= average
 		# is line valid (high above threshold)
 
-		self.lineValid = self.lineValidThreshold <= high
+		self.on_line = self.line_valid_threshold <= high
 		# print(f"high: {self.high}, threshold: {self.lineValidThreshold}, over threshold: {self.lineValid}")
 		# find line position
 		# using COG method for values above a threshold
-		position_on_line = 0.0
-
 		summ = 0
 		for i in range(8):
 			# everything more black than 'low' is ignored
-			v = self.edge_n[i] - self.low
+			v = self.edge_n[i] - self.low_threshold
 			if v > 0:
 				summ += v
 				posSum += (i+1) * v
-		if summ > 0 and self.lineValid:
-			self.position = posSum/summ - 4.5
+		if summ > 0 and self.on_line:
+			self.position_on_line = posSum/summ - 4.5
 		else:
-			self.position = 0
+			self.position_on_line = 0
 		
-		# print(self.position)
+		# print(self.position_on_line)
 
-		# print(f"low: {self.low}, Crossing threshold: {self.crossingThreshold}, Line valid threshold: {self.lineValidThreshold}, Edges: {self.edge_n}, high: {high}, validline: {self.lineValid}, avg: {average:.2f}")
-		# print(f"% Edge (sedge.py):: ({self.edge_n[0]} {self.edge_n[1]} {self.edge_n[2]} {self.edge_n[3]} {self.edge_n[4]} {self.edge_n[5]} {self.edge_n[6]}), min={self.low}, high={self.high}, pos={self.position:.2f}.")
+		# print(f"low: {self.low}, Crossing threshold: {self.crossingThreshold}, Crossing: {self.crossingLine}, Line valid threshold: {self.lineValidThreshold}, Edges: {self.edge_n}, high: {high}, validline: {self.lineValid}, avg: {average:.2f}")
 
 
 	def set_line_control_targets(self, target_velocity: float, target_position: float) -> None:
@@ -324,66 +301,27 @@ class SEdge:
 		""" Function called in loop to give follow line commands """
 		from uservice import service
 
-		dt = self.edge_nInterval / 1000.0 # seconds
+		dt = self.edge_update_interval / 1000.0 # seconds
 
-		error = self.target_position - self.position
+		error = self.target_position - self.position_on_line
 		self.total_error += error
 
-		self.pid_i += error * dt
+		self.cumulative_error += error * dt
 
 		diff_error = (error - self.previous_error) / dt
 
-		u = self.Kp * error + self.Ki * self.pid_i + self.Kd * diff_error
+		u = self.Kp * error + self.Ki * self.cumulative_error + self.Kd * diff_error
 		u = max(min(u, 1), -1) # bound
 
 		self.previous_error = error
 
-
-		# some parameters depend on sample time, adjust
-		# print(f"LineCtrl:: sample time {self.edge_nInterval}")
-		# if 2.0 < abs(self.edge_nInterval - self.edgeIntervalSetup): # ms
-		# 	self.PIDrecalculate()
-		# 	self.edgeIntervalSetup = self.edge_nInterval
-		# line to (much) the right gives a line position value.
-		# Then the robot is too much to the left.
-		# To correct we need a negative turnrate,
-		# so sign is OK
-		# e = self.target_position - self.position
-		# self.u = self.lineKp * e; # error times Kp
-		# Lead filter
-		# self.lineY = (self.u * self.tauZ2pT - self.lineE1 * self.tauZ2mT + self.lineY1 * self.tauP2mT)/self.tauP2pT
-		#
-		# if self.lineY > 1:
-		# 	self.lineY = 1
-		# elif self.lineY < -1:
-		# 	self.lineY = -1
-		# save old values
-		# self.lineE1 = self.u
-		# self.lineY1 = self.lineY
-		# make response
 		command = f"{self.velocity:.3f} {u:.3f} {t.time()}"
 		service.send(self.topicRc, command) # send new turn command, maintaining velocity
 
 		# debug print
 		# if self.edge_nUpdCnt % 20 == 0:
 		# 	print(f"u: {u:.3f}, p:{self.Kp * error:.3f}, i:{self.Ki * self.pid_i:.3f}, d:{self.Kd * diff_error:.3f}")
-			# print(f"% Edge::followLine: ctrl: e={e:.3f}, u={self.u:.3f}, y={self.lineY:.3f} -> {command}")
 
-	##########################################################
-
-	def PIDrecalculate(self):
-		print(f"LineCtrl:: PIDrecalculate: T={self.edgeIntervalSetup:.2f} -> {self.edge_nInterval:.2f} ms")
-		Tsec = self.edge_nInterval/1000
-		self.tauP2pT = self.lineTauP * 2.0 + Tsec
-		self.tauP2mT = self.lineTauP * 2.0 - Tsec
-		self.tauZ2pT = self.lineTauZ * 2.0 + Tsec
-		self.tauZ2mT = self.lineTauZ * 2.0 - Tsec
-		# debug
-		print(f"%% Lead: tauZ {self.lineTauZ:.3f} sec, tauP = {self.lineTauP:.3f} sec, T = {self.edge_nInterval:.3f} ms\n")
-		print(f"%%       tauZ2pT = {self.tauZ2pT:.4f}, tauZ2mT = {self.tauZ2mT:.4f}, tauP2pT = {self.tauP2pT:.4f}, tauP2mT = {self.tauP2pT:.4f}")
-
-
-	##########################################################
 
 	def terminate(self):
 		from uservice import service
@@ -417,23 +355,23 @@ class SEdge:
 		# paint calibrated white line (top)
 		cv2.line(img, (x,int(y-gh)), (int(x + 7*st), int(y-gh)), dtuGreen, thickness=1, lineType=8)
 		# paint threshold line for line valid
-		cv2.line(img, (x,int(y-gh*self.lineValidThreshold/1000.0)), (int(x + 7*st), int(y-gh*self.lineValidThreshold/1000.0)), dtuBlue, thickness=1, lineType=4)
+		cv2.line(img, (x,int(y-gh*self.line_valid_threshold/1000.0)), (int(x + 7*st), int(y-gh*self.line_valid_threshold/1000.0)), dtuBlue, thickness=1, lineType=4)
 		# draw current sensor readings
 		for i in range(8):
 			y = int(pl - self.edge_n[i]/1000 * gh)
 			cv2.drawMarker(img, (x,y), dtuRed, markerType=cv2.MARKER_STAR, thickness=2, line_type=8, markerSize = 10)
 			x += st
 		# paint line position
-		pixP = int((self.position + 4)*st)
+		pixP = int((self.position_on_line + 4)*st)
 		cv2.line(img, (pixP, int(pl)), (pixP, int(pl-gh)), dtuRed, thickness=3, lineType=4)
 		# paint low line position
-		pixL = pl - int(gh * self.low/1000)
+		pixL = pl - int(gh * self.low_threshold/1000)
 		cv2.line(img, (st, pixL), (st*8, pixL), dtuRed, thickness=1, lineType=4)
 		# some axis marking
 		cv2.putText(img, "Left", (st,pl - 2), cv2.FONT_HERSHEY_PLAIN, 1, dtuPurple, thickness=2)
 		cv2.putText(img, "Right", (int(st+6*st),pl - 2), cv2.FONT_HERSHEY_PLAIN, 1, dtuPurple, thickness=2)
 		cv2.putText(img, "White (1000)", (int(st),pl - gh - 2), cv2.FONT_HERSHEY_PLAIN, 1, dtuPurple, thickness=2)
-		if self.crossingLine:
+		if self.on_crossroad:
 			cv2.putText(img, "Crossing", (int(st),int(pl - 20)), cv2.FONT_HERSHEY_PLAIN, 1, dtuRed, thickness=2)
 
 

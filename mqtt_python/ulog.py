@@ -69,7 +69,7 @@ class ULog:
     # camera image number
     self.f.write(f"{cam.cnt} ")
     # line sensor detected position
-    self.f.write(f"{edge.position:.2f} ")
+    self.f.write(f"{edge.position_on_line:.2f} ")
     # trip A distance and heading change
     self.f.write(f"{pose.tripA:.3f} {pose.tripAh:.3f} ")
     # trip B distance and heading change
