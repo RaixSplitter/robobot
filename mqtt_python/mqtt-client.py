@@ -43,6 +43,8 @@ from scam import cam
 from uservice import service
 from ulog import flog
 
+from mqtt_python.modules.task import TaskState
+from mqtt_python.modules.axe import Axe
 
 class State(Enum):
 	START = 0
@@ -52,8 +54,16 @@ class State(Enum):
 	TURN_LEFT = 4
 	TURN_RIGHT = 5
 	TRY_RECOVER = 6
+	SOLVING_TASK = 7
 	END_PROGRAM = 1000
 
+
+class Task(Enum):
+	AXE = 0
+
+tasks = {
+	Task.AXE : Axe()
+}
 
 # set title of process, so that it is not just called Python
 setproctitle("mqtt-client")
@@ -61,6 +71,7 @@ setproctitle("mqtt-client")
 def loop():
 	""" """
 	state = State.START
+	current_task = None
 	prev_state = None
 
 	state_start_time = t.time()
@@ -68,6 +79,11 @@ def loop():
 	time_to_turn = 0.5	# how long does a normal left or right hand turn take
 	max_lost_time = 1.0 # how long can we be lost before trying to recover
 	move_speed = 0.1
+
+	# Calibration
+	time_between_images = 3.0 	# seconds
+	n_required_images = 40		# how many images to capture for calibration
+
 
 	if not service.args.now:
 		print("% Ready, press start button")
@@ -85,8 +101,9 @@ def loop():
 			# start = True # NOTE: Temporary overwrite to not need to press button
 		
 			if start:
-				print("% Starting")
-				state = State.FOLLOW_LINE
+				state = State.CAMERA_CALIBRATION
+				print(f"% Starting, in state: {state}")
+				# state = State.FOLLOW_LINE
 
 		elif state == State.FOLLOW_LINE:
 			edge.set_line_control_targets(target_velocity = move_speed, target_position = 0.0)
@@ -99,13 +116,13 @@ def loop():
         
 		elif state == State.TURN_LEFT:
 			edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
-			service.send(service.topicCmd + "ti/rc", "0.0 0.8") # turn left
+			service.send(service.topicCmd + "ti/rc", "0.0 0.8") # turn left # speed, angle
 			if time_to_turn < time_in_state(state_start_time):
 				state = State.FOLLOW_LINE
 
 		elif state == State.TURN_RIGHT:
 			edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
-			service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn right
+			service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn right # speed, angle
 			if time_to_turn < time_in_state(state_start_time):
 				state = State.FOLLOW_LINE
 
@@ -119,19 +136,46 @@ def loop():
 				state = State.FOLLOW_LINE
 
 		elif state == State.CAMERA_CALIBRATION:
-			print(f"Taking image, {n_images} taken")
-			t.sleep(3.0)
+			print(f"Taking image, {n_images}/{n_required_images} taken")
+			t.sleep(time_between_images)
 			take_image(save = True)
 
 			n_images += 1
-			if n_images == 20:
+			if n_images == n_required_images:
 				state = State.END_PROGRAM
 			
-			# Check if something has gone wrong
-			if not cam.useCam or 30 < time_in_state(state_start_time):
+			# Check if something has gone wrong, if we should 
+			if not cam.useCam or 1.5 * (time_between_images * n_images) < time_in_state(state_start_time):
+				state = State.END_PROGRAM
+
+		elif state == State.SOLVING_TASK:
+			if current_task is None:
+				print("Shouldnt happen you fucked up")
+				state = State.END_PROGRAM
+				continue
+
+			sub_state = tasks[current_task].loop()
+			if sub_state == TaskState.FAILURE:
+				pass
+			elif sub_state == TaskState.EXECUTING:
+				pass
+			elif sub_state == TaskState.LOST:
+				pass
+			elif sub_state == TaskState.SUCCESS:
+				pass
+
+			if 100 < time_in_state(state_start_time):
+				print(f"Lost in task {current_task}")
 				state = State.END_PROGRAM
 
 
+		elif state == State.END_PROGRAM:
+			print("Ending program")
+			break
+
+		else:
+			print(f"Unknown state '{state}', ending program")
+			break
 
 		# NOTE: This fails in vscode instance, must be in ssh -X ... forwarding stream
 		# stream_video()
