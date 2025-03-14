@@ -1,4 +1,4 @@
-from mqtt_python.modules.task import Task, TaskState
+from modules.task import Task, TaskState
 from sir import ir
 from sedge import edge
 from spose import pose

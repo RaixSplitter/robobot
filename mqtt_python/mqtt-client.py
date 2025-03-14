@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-
-import time as t
+import os
+import time
 from enum import Enum
 
 import numpy as np
@@ -52,8 +52,8 @@ def loop():
 	prev_state = None
 	n_frames_lost = 0
 	
-	last_crossroad_time = t.time()
-	state_start_time = t.time()
+	last_crossroad_time = time.time()
+	state_start_time = time.time()
 
 	n_images = 0		# how many images have we taken, useful for camera calibration
 	time_to_turn = 1.5	# how long does a normal left or right hand turn take
@@ -78,13 +78,9 @@ def loop():
 			
 			# start = True # NOTE: Temporary overwrite to not need to press button
 			
-			# stream_video(True)
-			# edge.plot_line()
-
 			if start:
-				print(f"% Starting, in state: {state}")
-				# state = State.FOLLOW_LINE
 				state = robo_map.robot_state
+				print(f"% Starting, in state: {state}")
 
 		elif state == State.FOLLOW_LINE:
 			edge.set_line_control_targets(target_velocity = move_speed, target_position = 0.0)
@@ -98,10 +94,10 @@ def loop():
 					state = State.LOST
 			
 			# If we are at a crossroad, change node
-			if edge.on_crossroad and 5.0 < t.time() - last_crossroad_time:
+			if edge.on_crossroad and 5.0 < time.time() - last_crossroad_time:
 				robo_map.next_action()
 				state = robo_map.robot_state
-				last_crossroad_time = t.time()
+				last_crossroad_time = time.time()
 		
 		elif state == State.TURN_LEFT:
 			edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
@@ -126,7 +122,7 @@ def loop():
 
 		elif state == State.CAMERA_CALIBRATION:
 			print(f"Taking image, {n_images}/{n_required_images} taken")
-			t.sleep(time_between_images)
+			time.sleep(time_between_images)
 			take_image(save = True)
 
 			n_images += 1
@@ -157,32 +153,26 @@ def loop():
 				print(f"Lost in task {current_task}")
 				state = State.END_PROGRAM
 
-
 		elif state == State.END_PROGRAM:
 			print("Ending program")
 			break
-		
-		elif state == "test":
-			edge.set_line_control_targets(target_velocity = move_speed, target_position = 0.0)
-			# stream_video()
-			if edge.on_crossroad:
-				state = State.END_PROGRAM
 
 		else:
 			print(f"Unknown state '{state}', ending program")
 			break
 
-		# NOTE: This fails in vscode instance, must be in ssh -X ... forwarding stream
-		# stream_video()
+		# NOTE: You cant watch stream in vscode instance, must be in ssh -X ... forwarding stream in terminal
+		if os.environ.get('DISPLAY'):
+			stream_video(draw_debug_overlay=True)
 		
 		if state != prev_state:
 			print(f"% Changed state from {prev_state} to {state}")
-			state_start_time = t.time()
+			state_start_time = time.time()
 			prev_state = state
 
 		# tell interface that we are alive
 		service.send(service.topicCmd + "ti/alive", str(service.startTime))
-		t.sleep(0.025)
+		time.sleep(0.025) # 40 Hz
 
 
 	# end of mission, turn LEDs off and stop
@@ -190,7 +180,7 @@ def loop():
 	gpio.set_value(20, 0)
 	edge.set_line_control_targets(0,0) # stop following line
 	service.send(service.topicCmd + "ti/rc","0 0")
-	t.sleep(0.05)
+	time.sleep(0.05)
 
 
 def stream_video(draw_debug_overlay: bool = False) -> bool: 
@@ -238,7 +228,7 @@ def take_image(save: bool = True) -> bool:
 
 
 def time_in_state(start_start_time: float) -> float:
-	return t.time() - start_start_time
+	return time.time() - start_start_time
 
 
 if __name__ == "__main__":
