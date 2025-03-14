@@ -41,9 +41,15 @@ tasks = {
 	Task.AXE : Axe()
 }
 
+# TODO: Move more params here
+params = {
+	"time_to_turn": 1.5,	# how long does a normal left or right hand turn take	
+	"move_speed": 0.2		# max 1
+}
+
 # set title of process, so that it is not just called Python
 setproctitle("mqtt-client")
-robo_map = master_map(path = [2,6,10], turn = {0: None, 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT})
+robo_map = master_map(path = [2,6,10,3], turn ={0:None, 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT})
 
 def loop():
 	""" """
@@ -56,9 +62,7 @@ def loop():
 	state_start_time = time.time()
 
 	n_images = 0		# how many images have we taken, useful for camera calibration
-	time_to_turn = 1.5	# how long does a normal left or right hand turn take
 	max_lost_time = 1.0 # how long can we be lost before trying to recover
-	move_speed = 0.2	# max 1
 
 	# Calibration
 	time_between_images = 3.0 	# seconds
@@ -95,20 +99,20 @@ def loop():
 			
 			# If we are at a crossroad, change node
 			if edge.on_crossroad and 5.0 < time.time() - last_crossroad_time:
-				robo_map.next_action()
+				robo_map.next_action(params)
 				state = robo_map.robot_state
 				last_crossroad_time = time.time()
 		
 		elif state == State.TURN_LEFT:
 			edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
 			service.send(service.topicCmd + "ti/rc", "0.0 0.8") # turn left # speed, angle
-			if time_to_turn < time_in_state(state_start_time):
+			if params["time_to_turn"] < time_in_state(state_start_time):
 				state = State.FOLLOW_LINE
 
 		elif state == State.TURN_RIGHT:
 			edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
 			service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn right # speed, angle
-			if time_to_turn < time_in_state(state_start_time):
+			if params["time_to_turn"] < time_in_state(state_start_time):
 				state = State.FOLLOW_LINE
 
 		elif state == State.LOST:
@@ -164,8 +168,9 @@ def loop():
 			break
 
 		# NOTE: You cant watch stream in vscode instance, must be in ssh -X ... forwarding stream in terminal
-		if os.environ.get('DISPLAY'):
-			stream_video(draw_debug_overlay=True)
+		# NOTE: We dont want to stream video while moving normally as it tanks the update speed
+		# if os.environ.get('DISPLAY'):
+		# 	stream_video(draw_debug_overlay=True)
 		
 		if state != prev_state:
 			print(f"% Changed state from {prev_state} to {state}")

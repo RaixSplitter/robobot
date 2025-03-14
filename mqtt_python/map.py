@@ -32,7 +32,7 @@ class master_map:
                 self.nodes[n].add_path(self.nodes[nn], out_in)
         self.go_to(self.path[0])
     
-    def next_action(self):
+    def next_action(self, parms: dict):
         if len(self.queue) == 1: # end reached
             print("Target reached")
             self.queue = None
