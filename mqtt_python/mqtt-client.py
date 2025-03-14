@@ -5,8 +5,8 @@ from enum import Enum
 
 import numpy as np
 import cv2
-from datetime import *
 from setproctitle import setproctitle
+
 # robot function
 from spose import pose
 from sir import ir
@@ -119,6 +119,8 @@ def loop():
 			edge.set_line_control_targets(target_velocity = -0.5*move_speed, target_position = 0.0)
 			if edge.on_line:
 				state = State.FOLLOW_LINE
+			if 10 < time_in_state(state_start_time):
+				state = State.END_PROGRAM
 
 		elif state == State.CAMERA_CALIBRATION:
 			print(f"Taking image, {n_images}/{n_required_images} taken")
