@@ -1,33 +1,8 @@
 #!/usr/bin/env python3
 
-#/***************************************************************************
-#*   Copyright (C) 2024 by DTU
-#*   jcan@dtu.dk
-#*
-#*
-#* The MIT License (MIT)  https://mit-license.org/
-#*
-#* Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-#* and associated documentation files (the “Software”), to deal in the Software without restriction,
-#* including without limitation the rights to use, copy, modify, merge, publish, distribute,
-#* sublicense, and/or sell copies of the Software, and to permit persons to whom the Software
-#* is furnished to do so, subject to the following conditions:
-#*
-#* The above copyright notice and this permission notice shall be included in all copies
-#* or substantial portions of the Software.
-#*
-#* THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-#* INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-#* PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
-#* FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-#* ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-#* THE SOFTWARE. */
-
-#import sys
-#import threading
 import time as t
 from enum import Enum
-#import select
+
 import numpy as np
 import cv2
 from datetime import *
@@ -43,18 +18,19 @@ from scam import cam
 from uservice import service
 from ulog import flog
 
-from mqtt_python.modules.task import TaskState
-from mqtt_python.modules.axe import Axe
+from modules.task import TaskState
+from modules.axe import Axe
+from map import master_map
 
 class State(Enum):
 	START = 0
 	CAMERA_CALIBRATION = 1
 	FOLLOW_LINE = 2
-	LOST = 3
-	TURN_LEFT = 4
-	TURN_RIGHT = 5
-	TRY_RECOVER = 6
-	SOLVING_TASK = 7
+	LOST = 4
+	TURN_LEFT = 5
+	TURN_RIGHT = 6
+	TRY_RECOVER = 7
+	SOLVING_TASK = 8
 	END_PROGRAM = 1000
 
 
@@ -67,23 +43,26 @@ tasks = {
 
 # set title of process, so that it is not just called Python
 setproctitle("mqtt-client")
+robo_map = master_map(path = [2,6,10], turn = {0: None, 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT})
 
 def loop():
 	""" """
 	state = State.START
 	current_task = None
 	prev_state = None
-
+	n_frames_lost = 0
+	
+	last_crossroad_time = t.time()
 	state_start_time = t.time()
+
 	n_images = 0		# how many images have we taken, useful for camera calibration
-	time_to_turn = 0.5	# how long does a normal left or right hand turn take
+	time_to_turn = 1.5	# how long does a normal left or right hand turn take
 	max_lost_time = 1.0 # how long can we be lost before trying to recover
-	move_speed = 0.1
+	move_speed = 0.2	# max 1
 
 	# Calibration
 	time_between_images = 3.0 	# seconds
 	n_required_images = 40		# how many images to capture for calibration
-
 
 	if not service.args.now:
 		print("% Ready, press start button")
@@ -92,28 +71,38 @@ def loop():
 	# main state machine
 	edge.set_line_control_targets(0, 0)
 	while not (service.stop or gpio.stop()):
-
 		# pose.printPose()
 
 		if state == State.START:
 			start = gpio.start() or service.args.now
 			
 			# start = True # NOTE: Temporary overwrite to not need to press button
-		
+			
+			# stream_video(True)
+			# edge.plot_line()
+
 			if start:
-				state = State.CAMERA_CALIBRATION
 				print(f"% Starting, in state: {state}")
 				# state = State.FOLLOW_LINE
+				state = robo_map.robot_state
 
 		elif state == State.FOLLOW_LINE:
 			edge.set_line_control_targets(target_velocity = move_speed, target_position = 0.0)
-			if not edge.on_line:
-				state = State.LOST
+			# Handle losing the line and intiating recovery
+			if edge.on_line:
+				n_frames_lost = 0
+			else:
+				n_frames_lost += 1 
+				
+				if 5 < n_frames_lost:
+					state = State.LOST
 			
-			# TODO: Here we want some logic to determine whether to turn left or right
-			if edge.on_crossroad:
-				state = State.TURN_LEFT
-        
+			# If we are at a crossroad, change node
+			if edge.on_crossroad and 5.0 < t.time() - last_crossroad_time:
+				robo_map.next_action()
+				state = robo_map.robot_state
+				last_crossroad_time = t.time()
+		
 		elif state == State.TURN_LEFT:
 			edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
 			service.send(service.topicCmd + "ti/rc", "0.0 0.8") # turn left # speed, angle
@@ -131,7 +120,7 @@ def loop():
 				state = State.TRY_RECOVER
 
 		elif state == State.TRY_RECOVER:
-			edge.set_line_control_targets(target_velocity = -0.1, target_position = 0.0)
+			edge.set_line_control_targets(target_velocity = -0.5*move_speed, target_position = 0.0)
 			if edge.on_line:
 				state = State.FOLLOW_LINE
 
@@ -172,6 +161,12 @@ def loop():
 		elif state == State.END_PROGRAM:
 			print("Ending program")
 			break
+		
+		elif state == "test":
+			edge.set_line_control_targets(target_velocity = move_speed, target_position = 0.0)
+			# stream_video()
+			if edge.on_crossroad:
+				state = State.END_PROGRAM
 
 		else:
 			print(f"Unknown state '{state}', ending program")
@@ -187,7 +182,7 @@ def loop():
 
 		# tell interface that we are alive
 		service.send(service.topicCmd + "ti/alive", str(service.startTime))
-		t.sleep(0.1)
+		t.sleep(0.025)
 
 
 	# end of mission, turn LEDs off and stop

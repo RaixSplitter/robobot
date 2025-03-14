@@ -1,50 +1,30 @@
-#/***************************************************************************
-#*   Copyright (C) 2024 by DTU
-#*   jcan@dtu.dk
-#*
-#*
-#* The MIT License (MIT)  https://mit-license.org/
-#*
-#* Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-#* and associated documentation files (the “Software”), to deal in the Software without restriction,
-#* including without limitation the rights to use, copy, modify, merge, publish, distribute,
-#* sublicense, and/or sell copies of the Software, and to permit persons to whom the Software
-#* is furnished to do so, subject to the following conditions:
-#*
-#* The above copyright notice and this permission notice shall be included in all copies
-#* or substantial portions of the Software.
-#*
-#* THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-#* INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-#* PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
-#* FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-#* ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-#* THE SOFTWARE. */
-
-
 from datetime import *
+import numpy as np
 import time as t
 import cv2
 
+np.set_printoptions(precision=2)
+
 class SEdge:
 	# raw AD values
-	edge = [0, 0, 0 , 0, 0, 0, 0, 0]
+	edge = np.zeros(8, dtype=np.int32)
 	edgeUpdCnt = 0
 	edgeTime = datetime.now()
 	edgeInterval = 0
 	# normalizing white values
-	edge_n_w = [0, 0, 0 , 0, 0, 0, 0, 0]
+	edge_n_w = np.zeros(8, dtype=np.int32)
 	edge_n_wUpdCnt = 0
 	edge_n_wTime = datetime.now()
 	# normalized after white calibration
-	edge_n = [0, 0, 0 , 0, 0, 0, 0, 0]
+	edge_n = np.zeros(8, dtype=np.int32)
 	edge_nUpdCnt = 0
 	edge_nTime = datetime.now()
 	edge_update_interval = 0.0 # how many seconds between the edge sensor messages
 
 	# line detection levels
 	line_valid_threshold = 550 # 1000 is calibrated white
-	line_crossroad_threshold = 700 # average above this is assumed to be crossing line
+	line_crossroad_threshold = 600 # average above this is assumed to be crossing line
+	line_crossroad_valid_distance = 5
 	low_threshold = line_valid_threshold - 100
 	
 	# line detection values
@@ -52,14 +32,15 @@ class SEdge:
 	position_on_line = 0.0
 	on_line = False
 	on_crossroad = False
-
-	sendCalibRequest = False
 	do_line_control = False
 
-    # PID loop
+	sendCalibRequest = False
+
+	# PID loop, perfecet values for speed = 0.2
 	Kp = 0.5
 	Ki = 0.0
 	Kd = 0.4
+
 	total_error = 0.0
 	previous_error = 0.0
 	cumulative_error = 0.0
@@ -75,6 +56,11 @@ class SEdge:
 		service.send(self.topicLip, "1")
 		# topic for (remote) control
 		self.topicRc = service.topicCmd + "ti/rc"
+
+		# Subscribe to raw line sensor messages: https://rsewiki.electro.dtu.dk/index.php?title=Help_page_Teensy_8#Line_sensor
+		# service.send(service.topicCmd + "T0/sub","liv 1")
+		# service.send(service.topicCmd + "T0/sub","liw 1")
+
 		# request data
 		while not service.stop:
 			t.sleep(0.02)
@@ -129,59 +115,24 @@ class SEdge:
 			if loops > 30:
 				print(f"% Edge (sedge.py):: got no data after {loops} (continues edge_n_wUpdCnt={self.edge_n_wUpdCnt}, edgeUpdCnt={self.edgeUpdCnt}, edge_nUpdCnt={self.edge_nUpdCnt})")
 				break
-		pass
 
-	##########################################################
 
-	def print(self):
-		from uservice import service
-		print("% Edge (sedge.py):: " + str(self.edgeTime - service.startTime) +
-					f" ({self.edge[0]}, " +
-					f"{self.edge[1]}, " +
-					f"{self.edge[2]}, " +
-					f"{self.edge[3]}, " +
-					f"{self.edge[4]}, " +
-					f"{self.edge[5]}, " +
-					f"{self.edge[6]}, " +
-					f"{self.edge[7]})" +
-					f" {self.edgeInterval:.2f} ms " +
-					str(self.edgeUpdCnt))
-	def printn(self):
-		from uservice import service
-		print("% Edge (sedge.py):: normalized " + str(self.edge_nTime - service.startTime) +
-					f" ({self.edge_n[0]}, " +
-					f"{self.edge_n[1]}, " +
-					f"{self.edge_n[2]}, " +
-					f"{self.edge_n[3]}, " +
-					f"{self.edge_n[4]}, " +
-					f"{self.edge_n[5]}, " +
-					f"{self.edge_n[6]}, " +
-					f"{self.edge_n[7]})" +
-					f" {self.edge_update_interval:.2f} ms " +
-					f" {self.position_on_line:.2f} " +
-					str(self.edge_nUpdCnt))
-	def printnw(self):
-		from uservice import service
-		print("% Edge (sedge.py):: white level " + str(self.edge_n_wTime) +
-					f" ({self.edge_n_w[0]}, " +
-					f"{self.edge_n_w[1]}, " +
-					f"{self.edge_n_w[2]}, " +
-					f"{self.edge_n_w[3]}, " +
-					f"{self.edge_n_w[4]}, " +
-					f"{self.edge_n_w[5]}, " +
-					f"{self.edge_n_w[6]}, " +
-					f"{self.edge_n_w[7]}) " +
-					str(self.edge_n_wUpdCnt))
 
 	##########################################################
 
 	def decode(self, topic, msg):
 		# decode MQTT message
 		used = True
+
+		# Only used for calibration purposes, never needed really - and not subscribed to 
 		if topic == "T0/liv": # raw AD value
 			from uservice import service
 			gg = msg.split(" ")
 			if (len(gg) >= 4):
+				# NOTE: Ocasionally the raw sensor values are all 0, probably because the sampling freq is lower than the publishing freq
+				if all([int(v) == 0 for v in gg[1:9]]):
+					return True
+
 				t0 = self.edgeTime
 				self.edgeTime = datetime.fromtimestamp(float(gg[0]))
 				self.edge[0] = int(gg[1])
@@ -192,6 +143,7 @@ class SEdge:
 				self.edge[5] = int(gg[6])
 				self.edge[6] = int(gg[7])
 				self.edge[7] = int(gg[8])
+
 				t1 = self.edgeTime
 				if self.edgeUpdCnt == 2:
 					self.edgeInterval = (t1 -t0).total_seconds()*1000
@@ -230,6 +182,7 @@ class SEdge:
 				if self.do_line_control:
 					self.follow_line()
 
+		# Only used for calibration purposes, never needed really - and not subscribed to 
 		elif topic == "T0/liw": # get white level
 			from uservice import service
 			gg = msg.split(" ")
@@ -244,28 +197,65 @@ class SEdge:
 				self.edge_n_w[6] = int(gg[7])
 				self.edge_n_w[7] = int(gg[8])
 				self.edge_n_wUpdCnt += 1
-				# self.printnw()
 		else:
 			used = False
 		return used
 
 	##########################################################
 
+	def plot_line(self):
+		"""
+		Stream video to X11. Remember to run ssh with x-port forwarding
+			ssh -X local@10.197.218.176
+		"""
+		# self.paint()
+		sensor_data = np.array(self.edge_n)
+
+		if np.all(sensor_data == 0):
+			return
+		n = len(self.edge_n)
+
+		# Normalize the data to 8-bit range (0-255)
+		sensor_data_norm = ((sensor_data - sensor_data.min()) / (sensor_data.max() - sensor_data.min()) * 255).astype(np.uint8)
+
+		# If we arent on line just make it all zero
+		if np.all(sensor_data < self.line_valid_threshold):
+			sensor_data_norm = np.zeros_like(sensor_data, dtype=np.uint8)
+
+		# Resize for better visualization
+		scale_factor = 20  # Scale up for visibility
+		sensor_image = cv2.resize(sensor_data_norm, (scale_factor, n*scale_factor), interpolation=cv2.INTER_NEAREST)
+
+		cv2.imshow("Edge sensor", sensor_image.T)
+		cv2.waitKey(1)
+
+
 	def detect_line(self):
-		""" """
-		posSum = 0
-		
-		high = max(self.edge_n)
-		average = sum(self.edge_n) / len(self.edge_n)
+		""" """		
+		high = self.edge_n.max()
+		average = self.edge_n.mean()
+
+		# print(self.edge / self.edge_n_w)
 
 		# detect if we are at a crossroad
-		self.on_crossroad = self.line_crossroad_threshold <= average
+		# self.on_crossroad = self.line_crossroad_threshold <= average
+		# self.on_crossroad = self.line_crossroad_threshold < average or (self.line_valid_threshold < self.edge_n[0] and self.line_valid_threshold < self.edge_n[-1])
+		# new cross detector: if the width is larger than self.line_crossroad_valid_distance
+		high_list = [i for i,v in enumerate(self.edge_n) if v >= 300]
+		if len(high_list) > 0:
+			first_detector = high_list[0]
+			last_detector  = high_list[-1]
+			self.on_crossroad = (last_detector - first_detector) >= self.line_crossroad_valid_distance
+		else:
+			self.on_crossroad = False
 		# is line valid (high above threshold)
 
 		self.on_line = self.line_valid_threshold <= high
 		# print(f"high: {self.high}, threshold: {self.lineValidThreshold}, over threshold: {self.lineValid}")
+
 		# find line position
 		# using COG method for values above a threshold
+		posSum = 0
 		summ = 0
 		for i in range(8):
 			# everything more black than 'low' is ignored
@@ -277,8 +267,6 @@ class SEdge:
 			self.position_on_line = posSum/summ - 4.5
 		else:
 			self.position_on_line = 0
-		
-		# print(self.position_on_line)
 
 		# print(f"low: {self.low}, Crossing threshold: {self.crossingThreshold}, Crossing: {self.crossingLine}, Line valid threshold: {self.lineValidThreshold}, Edges: {self.edge_n}, high: {high}, validline: {self.lineValid}, avg: {average:.2f}")
 
@@ -293,8 +281,21 @@ class SEdge:
 		self.do_line_control = 0.0 != target_velocity
 
 
-	def pid_loop(self):
-		pass
+	def pid_loop(self, dt: float, target: float, current:float) -> float:
+		""" Do pid control for a float, that is 0 for straight on line -1 for full left and 1 for full right """
+		error = target - current
+		self.cumulative_error += error * dt
+		diff_error = (error - self.previous_error) / dt
+
+		u = self.Kp * error + self.Ki * self.cumulative_error + self.Kd * diff_error
+		u = max(min(u, 1), -1) # bound
+
+		self.previous_error = error
+		
+		# debug print
+		# if self.edge_nUpdCnt % 20 == 0:
+		# 	print(f"u: {u:.3f}, p:{self.Kp * error:.3f}, i:{self.Ki * self.pid_i:.3f}, d:{self.Kd * diff_error:.3f}")
+		return u
 
 
 	def follow_line(self):
@@ -303,24 +304,10 @@ class SEdge:
 
 		dt = self.edge_update_interval / 1000.0 # seconds
 
-		error = self.target_position - self.position_on_line
-		self.total_error += error
-
-		self.cumulative_error += error * dt
-
-		diff_error = (error - self.previous_error) / dt
-
-		u = self.Kp * error + self.Ki * self.cumulative_error + self.Kd * diff_error
-		u = max(min(u, 1), -1) # bound
-
-		self.previous_error = error
+		u = self.pid_loop(dt, self.target_position, self.position_on_line)
 
 		command = f"{self.velocity:.3f} {u:.3f} {t.time()}"
 		service.send(self.topicRc, command) # send new turn command, maintaining velocity
-
-		# debug print
-		# if self.edge_nUpdCnt % 20 == 0:
-		# 	print(f"u: {u:.3f}, p:{self.Kp * error:.3f}, i:{self.Ki * self.pid_i:.3f}, d:{self.Kd * diff_error:.3f}")
 
 
 	def terminate(self):
@@ -337,7 +324,6 @@ class SEdge:
 		print("% Edge (sedge.py):: terminated")
 		pass
 
-	##########################################################
 
 	def paint(self, img):
 		h, w, ch = img.shape
