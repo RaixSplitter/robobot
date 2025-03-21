@@ -8,7 +8,7 @@ class Axe(Task):
     def __init__(self):
         super().__init__(name='axe')
         self.dont_move = 0.0
-        self.drive_fast = 0.6
+        self.drive_fast = 0.75
 
         self.have_run_through = False
         
@@ -21,63 +21,62 @@ class Axe(Task):
         self.free_durations = []       
 
         self.cross_time = 2.0
-        self.cross_length = 50
+        self.cross_length = 1.0
 
         self.is_running = False  
 
     def loop(self):
-        while self.state == TaskState.EXECUTING:
-            distance = ir[0]  
-            print(f"IR distance: {distance} cm")  
+        distance = ir.ir[1]
 
-            if 10 < distance < 80:
-                if not self.obstacle_active:
-                    # We cant go through the axe right now
-                    self.obstacle_active = True
-                    self.obstacle_start_time = time.time()
+        if distance < 0.40:
+            if not self.obstacle_active:
+                # We cant go through the axe right now
+                self.obstacle_active = True
+                self.obstacle_start_time = time.time()
 
-                    # When the axe shadows the IR sensor we note the time there was a gap
-                    if self.free_active:
-                        self.free_active = False
-                        duration = time.time() - self.free_start_time
-                        self.free_durations.append(duration)
-                        print(f"Free interval: {duration:.2f} s")
+                # When the axe shadows the IR sensor we note the time there was a gap
+                if self.free_active:
+                    self.free_active = False
+                    duration = time.time() - self.free_start_time
+                    self.free_durations.append(duration)
+                    print(f"Free interval: {duration:.2f} s")
 
-                if not self.is_running:
-                    edge.set_line_control_targets(
-                        target_velocity=self.dont_move,
-                        target_position=0.0
-                    )
-                    pose.tripBreset()
+            if not self.is_running:
+                edge.set_line_control_targets(
+                    target_velocity=self.dont_move,
+                    target_position=0.0
+                )
+                pose.tripBreset()
 
-           
-            elif distance > 100:
-                if not self.free_active:
-                    self.free_active = True
-                    self.free_start_time = time.time()
+        
+        else:
+            if not self.free_active:
+                self.free_active = True
+                self.free_start_time = time.time()
 
-                    # Once the axe does not shadow the IR sensor we note the time it was free
-                    if self.obstacle_active:
-                        self.obstacle_active = False
-                        duration = time.time() - self.obstacle_start_time
-                        self.obstacle_durations.append(duration)
-                        print(f"Obstacle interval: {duration:.2f} s")
-
-              
-                if not self.is_running and len(self.free_durations) > 1:
-                    self.is_running = True
-                    edge.set_line_control_targets(
-                        target_velocity=self.drive_fast,
-                        target_position=0.0
-                    )
-                    
-            if self.is_running:
-                if pose.tripB >= self.cross_length:
-                    self.have_run_through = True
+                # Once the axe does not shadow the IR sensor we note the time it was free
+                if self.obstacle_active:
+                    self.obstacle_active = False
+                    duration = time.time() - self.obstacle_start_time
+                    self.obstacle_durations.append(duration)
+                    print(f"Obstacle interval: {duration:.2f} s")
 
             
-            if self.have_run_through:
-                edge.set_line_control_targets(target_velocity=0.0, target_position=0.0)
-                self.state = TaskState.SUCCESS
+            if not self.is_running and len(self.free_durations) >= 1:
+                self.is_running = True
+                edge.set_line_control_targets(
+                    target_velocity=self.drive_fast,
+                    target_position=0.0
+                )
+                
+        if self.is_running:
+            if pose.tripB >= self.cross_length:
+                self.have_run_through = True
 
-            time.sleep(0.05)
+        
+        if self.have_run_through:
+            edge.set_line_control_targets(target_velocity=0.0, target_position=0.0)
+            return TaskState.SUCCESS
+
+        # time.sleep(0.05)
+        return TaskState.EXECUTING
