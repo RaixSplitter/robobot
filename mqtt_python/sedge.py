@@ -37,9 +37,9 @@ class SEdge:
 	sendCalibRequest = False
 
 	# PID loop, perfecet values for speed = 0.2
-	Kp = 0.5
-	Ki = 0.0
-	Kd = 0.4
+	Kp = 3 # was 0.5
+	Ki = 0
+	Kd = 15 # was 0.4
 
 	total_error = 0.0
 	previous_error = 0.0
@@ -283,8 +283,10 @@ class SEdge:
 
 	def pid_loop(self, dt: float, target: float, current:float) -> float:
 		""" Do pid control for a float, that is 0 for straight on line -1 for full left and 1 for full right """
-		error = target - current
+		error = target - current # error is between -3.5 and 3.5
 		self.cumulative_error += error * dt
+		self.cumulative_error = min(max(self.cumulative_error, -1), 1)
+
 		diff_error = (error - self.previous_error) / dt
 
 		u = self.Kp * error + self.Ki * self.cumulative_error + self.Kd * diff_error

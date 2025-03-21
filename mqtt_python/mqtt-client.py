@@ -20,6 +20,9 @@ from ulog import flog
 
 from modules.task import TaskState
 from modules.axe import Axe
+from modules.eight import Eight
+from modules.roundabout import Roundabout
+
 from map import master_map
 
 class State(Enum):
@@ -32,19 +35,24 @@ class State(Enum):
 	TRY_RECOVER = 7
 	SOLVING_TASK = 8
 	END_PROGRAM = 1000
+	TESTING = 100000
 
 
 class Task(Enum):
 	AXE = 0
+	EIGHT = 1
+	ROUNDABOUT = 2
 
 tasks = {
-	Task.AXE : Axe()
+	Task.AXE : Axe(),
+	Task.EIGHT : Eight(),
+	Task.ROUNDABOUT : Roundabout()
 }
 
 # TODO: Move more params here
 params = {
 	"time_to_turn": 1.5,	# how long does a normal left or right hand turn take	
-	"move_speed": 0.2		# max 1
+	"move_speed": 0.35		# max 1
 }
 
 # set title of process, so that it is not just called Python
@@ -75,7 +83,6 @@ def loop():
 	# main state machine
 	edge.set_line_control_targets(0, 0)
 	while not (service.stop or gpio.stop()):
-		# pose.printPose()
 
 		if state == State.START:
 			start = gpio.start() or service.args.now
@@ -84,6 +91,7 @@ def loop():
 			
 			if start:
 				state = robo_map.robot_state
+				# state = State.TESTING				
 				print(f"% Starting, in state: {state}")
 
 		elif state == State.FOLLOW_LINE:
@@ -153,7 +161,8 @@ def loop():
 			elif sub_state == TaskState.LOST:
 				pass
 			elif sub_state == TaskState.SUCCESS:
-				pass
+				print(f"Succeeded subtask '{current_task}'")
+				state = State.END_PROGRAM # TEmporary
 
 			if 100 < time_in_state(state_start_time):
 				print(f"Lost in task {current_task}")
@@ -162,6 +171,11 @@ def loop():
 		elif state == State.END_PROGRAM:
 			print("Ending program")
 			break
+
+		elif state == State.TESTING:
+			# state = State.SOLVING_TASK
+			# current_task = Task.ROUNDABOUT
+			pass
 
 		else:
 			print(f"Unknown state '{state}', ending program")
