@@ -1,8 +1,6 @@
 import cv2
 import os
-# import matplotlib.pyplot as plt
 import numpy as np
-
 
 CM_PATH = "config/camera/calibration_matrix.npy"
 DIST_PATH = "config/camera/distortion_coefficients.npy"

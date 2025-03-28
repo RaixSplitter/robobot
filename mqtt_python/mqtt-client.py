@@ -23,11 +23,11 @@ from modules.axe import Axe
 from modules.eight import Eight
 from modules.roundabout import Roundabout
 
-from map import master_map
+from map import master_map,N,E,S,W
 
 class State(Enum):
 	START = 0
-	CAMERA_CALIBRATION = 1
+	PHOTO_MODE = 1
 	FOLLOW_LINE = 2
 	LOST = 4
 	TURN_LEFT = 5
@@ -51,17 +51,22 @@ tasks = {
 
 # TODO: Move more params here
 params = {
-	"time_to_turn": 1.5,	# how long does a normal left or right hand turn take	
-	"move_speed": 0.35		# max 1
+	"time_to_turn": 2, # how long does a normal left or right hand turn take	
+	"move_speed": 0.35, # max 1
 }
+# speed        | 0.1 | 0.2 | 0.3
+# 180 deg turn | 4.5 | 4.0 | 4.2
 
 # set title of process, so that it is not just called Python
 setproctitle("mqtt-client")
-robo_map = master_map(path = [2,6,10,3], turn ={0:None, 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT})
+robo_map = master_map(path = [2,6,10,3], turn = {0:None, 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT}, robot_param=params)
+# robo_map = master_map(path = [10,3], turn = {0:None, 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT}, init_node=(7,N), robot_param=params)
+
 
 def loop():
 	""" """
 	state = State.START
+	# state = State.PHOTO_MODE
 	current_task = None
 	prev_state = None
 	n_frames_lost = 0
@@ -69,12 +74,12 @@ def loop():
 	last_crossroad_time = time.time()
 	state_start_time = time.time()
 
-	n_images = 0		# how many images have we taken, useful for camera calibration
+	n_images = 0		# how many images have we taken, useful for PHOTO MODE
 	max_lost_time = 1.0 # how long can we be lost before trying to recover
 
 	# Calibration
 	time_between_images = 3.0 	# seconds
-	n_required_images = 40		# how many images to capture for calibration
+	n_required_images = 3		# how many images to capture for calibration
 
 	if not service.args.now:
 		print("% Ready, press start button")
@@ -86,7 +91,6 @@ def loop():
 
 		if state == State.START:
 			start = gpio.start() or service.args.now
-			
 			# start = True # NOTE: Temporary overwrite to not need to press button
 			
 			if start:
@@ -95,7 +99,7 @@ def loop():
 				print(f"% Starting, in state: {state}")
 
 		elif state == State.FOLLOW_LINE:
-			edge.set_line_control_targets(target_velocity = move_speed, target_position = 0.0)
+			edge.set_line_control_targets(target_velocity = params["move_speed"], target_position = 0.0)
 			# Handle losing the line and intiating recovery
 			if edge.on_line:
 				n_frames_lost = 0
@@ -107,7 +111,7 @@ def loop():
 			
 			# If we are at a crossroad, change node
 			if edge.on_crossroad and 5.0 < time.time() - last_crossroad_time:
-				robo_map.next_action(params)
+				robo_map.next_action()
 				state = robo_map.robot_state
 				last_crossroad_time = time.time()
 		
@@ -128,15 +132,16 @@ def loop():
 				state = State.TRY_RECOVER
 
 		elif state == State.TRY_RECOVER:
-			edge.set_line_control_targets(target_velocity = -0.5*move_speed, target_position = 0.0)
+			edge.set_line_control_targets(target_velocity = -0.5*params["move_speed"], target_position = 0.0)
 			if edge.on_line:
 				state = State.FOLLOW_LINE
 			if 10 < time_in_state(state_start_time):
 				state = State.END_PROGRAM
 
-		elif state == State.CAMERA_CALIBRATION:
+		elif state == State.PHOTO_MODE:
 			print(f"Taking image, {n_images}/{n_required_images} taken")
-			time.sleep(time_between_images)
+			# time.sleep(time_between_images)
+			input() # enter in terminal to proceed
 			take_image(save = True)
 
 			n_images += 1
@@ -144,8 +149,8 @@ def loop():
 				state = State.END_PROGRAM
 			
 			# Check if something has gone wrong, if we should 
-			if not cam.useCam or 1.5 * (time_between_images * n_images) < time_in_state(state_start_time):
-				state = State.END_PROGRAM
+			# if not cam.useCam or 1.5 * (time_between_images * n_images) < time_in_state(state_start_time):
+			# 	state = State.END_PROGRAM
 
 		elif state == State.SOLVING_TASK:
 			if current_task is None:
@@ -199,7 +204,6 @@ def loop():
 		# tell interface that we are alive
 		service.send(service.topicCmd + "ti/alive", str(service.startTime))
 		time.sleep(0.025) # 40 Hz
-
 
 	# end of mission, turn LEDs off and stop
 	service.send(service.topicCmd + "T0/leds","16 0 0 0") 
