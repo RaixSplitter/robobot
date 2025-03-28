@@ -173,8 +173,13 @@ def loop():
 			break
 
 		elif state == State.TESTING:
+			im = take_image(save = False, show = True)
+			from modules.aruco import get_pose
+			save_path = "images/poses.png"
+			poses = get_pose(im, save_path)
 			# state = State.SOLVING_TASK
 			# current_task = Task.ROUNDABOUT
+			state = State.END_PROGRAM
 			pass
 
 		else:
@@ -221,16 +226,16 @@ def stream_video(draw_debug_overlay: bool = False) -> bool:
 	return True
 
 
-def take_image(save: bool = True) -> bool:
+def take_image(save: bool = True, show: bool = True) -> None | np.ndarray:
 	""" """
 	if not cam.useCam:
-		return False
+		return None
 
 	ok, img, imgTime = cam.getImage()
 	if not ok:
 		if cam.imageFailCnt < 5:
 			print("% Failed to get image.")
-			return False
+			return None
 	else:
 		h, w, ch = img.shape
 		if not service.args.silent:
@@ -238,14 +243,14 @@ def take_image(save: bool = True) -> bool:
 			pass
 		# TODO: Commented out
 		# edge.paint(img)
-		if not gpio.onPi:
+		if not gpio.onPi and show:
 			cv2.imshow('frame for analysis', img)
 		if save:
 			fn = f"images/image_{imgTime.strftime('%Y_%b_%d_%H%M%S_')}{cam.cnt:03d}.jpg"
 			cv2.imwrite(fn, img)
 			if not service.args.silent:
 				print(f"% Saved image {fn}")
-		return True
+		return img
 
 
 def time_in_state(start_start_time: float) -> float:

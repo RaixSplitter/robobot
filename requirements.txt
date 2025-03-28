@@ -1,3 +1,5 @@
 opencv-python
 numpy
 matplotlib
+setproctitle
+paho-mqtt
