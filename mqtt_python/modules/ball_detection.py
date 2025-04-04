@@ -8,12 +8,13 @@ from collections import defaultdict
 import enum
 
 
-IMG_PATH = "C:/programmering/DTU/robobot/data/blob/blob2.jpg"
+IMG_PATH = "C:/Users/marku/Downloads/159016cb-39c7-473a-9487-43dcc69a5e34.jpg"
 CM_PATH = 'C:/programmering/DTU/robobot/config/camera/calibration_matrix.npy'
 DIST_PATH = 'C:/programmering/DTU/robobot/config/camera/distortion_coefficients.npy'
 
 MTX = np.load(CM_PATH)
 DIST = np.load(DIST_PATH)
+BALL_DIAMETER = 0.045  # meters
 
 BLUE_MIN = np.array([100,90,0])
 BLUE_MAX = np.array([150,255,255])
@@ -102,7 +103,7 @@ def filter_circles(circles):
             
     return np.array(circles_filtered)
 
-class Ball_Color(enum.enum):
+class Ball_Color(enum.Enum):
     BLUE = 'blue'
     RED = 'red'
     WHITE = 'white'
@@ -173,6 +174,32 @@ def detect_balls(image : np.ndarray, color : Ball_Color = Ball_Color.BLUE, show 
     
     return circles_filtered
 
+def pose_estimation_ball(detection, mtx, dist):
+    """
+    Estimate the pose of a ball given its detection in the image.
+    """
+    x, y, r = detection
+    cam_pos = np.array([x, y, 1])
+    
+    # Invert the camera matrix
+    mtx_inv = np.linalg.inv(mtx)
+    
+    # Normalize the camera position using the inverse camera matrix
+    cam_pos_normalized = np.dot(mtx_inv, cam_pos)
+    Z = (mtx[0,0] * BALL_DIAMETER / 2) / r # 45 cm is the distance to the camera in meters
+    return cam_pos_normalized * Z
 
 
-#     break # only draw the best circle
+
+
+if __name__ == "__main__":
+    # image = cv2.imread("../data/blob/robobot/image_2025_Mar_28_162150_009.jpg")
+    image = cv2.imread("C:/Users/marku/Downloads/159016cb-39c7-473a-9487-43dcc69a5e34.jpg")
+    # Crop image to remove the top 45% part of the image
+    image = image[int(image.shape[0]*0.2):, :]
+    detections = detect_balls(image, show=True)
+    print("Detected circles:", detections)
+
+    for detection in detections:
+        pose_est = pose_estimation_ball(detection, MTX, DIST)
+        print("Pose estimation:", pose_est)
