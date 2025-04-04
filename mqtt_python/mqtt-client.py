@@ -3,8 +3,8 @@ import os
 import time
 from enum import Enum
 
-import numpy as np
 import cv2
+import numpy as np
 from setproctitle import setproctitle
 
 # robot function
@@ -54,19 +54,26 @@ params = {
 	"time_to_turn": 2, # how long does a normal left or right hand turn take	
 	"move_speed": 0.35, # max 1
 }
+all_poses = []
 # speed        | 0.1 | 0.2 | 0.3
 # 180 deg turn | 4.5 | 4.0 | 4.2
 
 # set title of process, so that it is not just called Python
 setproctitle("mqtt-client")
-robo_map = master_map(path = [2,6,10,3], turn = {0:None, 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT}, robot_param=params)
+robo_map = master_map(
+	path = [2,6,10,3], 
+	turn = {
+		0:None, 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT
+	}, 
+	robot_param=params
+)
 # robo_map = master_map(path = [10,3], turn = {0:None, 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT}, init_node=(7,N), robot_param=params)
 
 
 def loop():
 	""" """
-	state = State.START
-	# state = State.PHOTO_MODE
+	# state = State.START
+	state = State.TESTING
 	current_task = None
 	prev_state = None
 	n_frames_lost = 0
@@ -95,7 +102,6 @@ def loop():
 			
 			if start:
 				state = robo_map.robot_state
-				# state = State.TESTING				
 				print(f"% Starting, in state: {state}")
 
 		elif state == State.FOLLOW_LINE:
@@ -177,25 +183,34 @@ def loop():
 			print("Ending program")
 			break
 
+		# NOTE: This state is the catch all for any misc testing code
 		elif state == State.TESTING:
-			im = take_image(save = False, show = True)
-			from modules.aruco import get_pose
-			save_path = "images/poses.png"
-			poses = get_pose(im, save_path)
-			# state = State.SOLVING_TASK
-			# current_task = Task.ROUNDABOUT
-			state = State.END_PROGRAM
+			# im = take_image(save = False, show = True)
+			# from modules.aruco import get_pose
+			# save_path = "images/poses.png"
+			# poses = get_pose(im, save_path)
+			# # state = State.SOLVING_TASK
+			# # current_task = Task.ROUNDABOUT
+			# state = State.END_PROGRAM
 			pass
 
 		else:
 			print(f"Unknown state '{state}', ending program")
 			break
 
+
 		# NOTE: You cant watch stream in vscode instance, must be in ssh -X ... forwarding stream in terminal
 		# NOTE: We dont want to stream video while moving normally as it tanks the update speed
-		# if os.environ.get('DISPLAY'):
-		# 	stream_video(draw_debug_overlay=True)
-		
+		if os.environ.get('DISPLAY'):
+			# Plot map of where we think we are
+			all_poses.append(pose.pose)
+			img = draw_trajectory(all_poses)
+			cv2.imshow("Trajectory", img)
+			cv2.waitKey(1)
+
+			# Stream camera feed. NOTE: Tanks the rest of the program
+			# stream_video(draw_debug_overlay=True)
+
 		if state != prev_state:
 			print(f"% Changed state from {prev_state} to {state}")
 			state_start_time = time.time()
@@ -221,6 +236,7 @@ def stream_video(draw_debug_overlay: bool = False) -> bool:
 	if not cam.useCam:
 		return False
 	ok, img, imgTime = cam.getImage()
+	img = cv2.flip(img, 0)
 	if not ok:
 		return False
 	if draw_debug_overlay:
@@ -236,6 +252,8 @@ def take_image(save: bool = True, show: bool = True) -> None | np.ndarray:
 		return None
 
 	ok, img, imgTime = cam.getImage()
+	img = cv2.flip(img, 0)
+
 	if not ok:
 		if cam.imageFailCnt < 5:
 			print("% Failed to get image.")
@@ -259,6 +277,60 @@ def take_image(save: bool = True, show: bool = True) -> None | np.ndarray:
 
 def time_in_state(start_start_time: float) -> float:
 	return time.time() - start_start_time
+
+
+def draw_trajectory(poses, img_size=(500, 500), border=20):
+    """
+    Draws a visualization of the 2D pose path using OpenCV.
+    
+    :param poses: List of (x, y, heading) tuples.
+    :param img_size: Size of the output image (width, height).
+    :param border: Border padding to avoid points touching the edges.
+    :return: OpenCV image with the drawn path.
+    """
+    if not poses:
+        return np.zeros((img_size[1], img_size[0], 3), dtype=np.uint8)
+
+    # Extract x, y coordinates
+    x_vals = [p[0] for p in poses]
+    y_vals = [p[1] for p in poses]
+
+    # Find min/max for scaling
+    min_x, max_x = min(x_vals), max(x_vals)
+    min_y, max_y = min(y_vals), max(y_vals)
+
+    # Compute scale factors to fit within the image
+    scale_x = (img_size[0] - 2 * border) / (max_x - min_x + 1e-6)
+    scale_y = (img_size[1] - 2 * border) / (max_y - min_y + 1e-6)
+    scale = min(scale_x, scale_y)  # Keep aspect ratio
+
+    # Convert to pixel coordinates (flip y-axis since OpenCV has origin at top-left)
+    def to_pixel(x, y):
+        px = int((x - min_x) * scale + border)
+        py = int(img_size[1] - ((y - min_y) * scale + border))  # Invert Y for OpenCV
+        return px, py
+
+    # Create a blank image
+    img = np.zeros((img_size[1], img_size[0], 3), dtype=np.uint8)
+
+    # Draw path
+    for i in range(1, len(poses)):
+        p1 = to_pixel(*poses[i - 1][:2])
+        p2 = to_pixel(*poses[i][:2])
+        cv2.line(img, p1, p2, (0, 255, 255), 2)  # Yellow path
+
+    # Draw current position and heading
+    x, y, heading, _ = poses[-1]
+    px, py = to_pixel(x, y)
+    cv2.circle(img, (px, py), 5, (255, 0, 0), -1)  # Blue dot for current position
+
+    # Draw heading arrow
+    arrow_length = 20  # Adjust arrow length
+    dx = int(arrow_length * np.cos(heading))
+    dy = int(arrow_length * np.sin(heading))
+    cv2.arrowedLine(img, (px, py), (px + dx, py - dy), (0, 255, 0), 2)  # Green arrow
+
+    return img
 
 
 if __name__ == "__main__":
