@@ -1,16 +1,18 @@
 import cv2
 import os
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
-from skimage.morphology import skeletonize
+# from skimage.morphology import skeletonize
 import itertools
 from collections import defaultdict
 import enum
 
 
-IMG_PATH = "C:/Users/marku/Downloads/159016cb-39c7-473a-9487-43dcc69a5e34.jpg"
-CM_PATH = 'C:/programmering/DTU/robobot/config/camera/calibration_matrix.npy'
-DIST_PATH = 'C:/programmering/DTU/robobot/config/camera/distortion_coefficients.npy'
+# CM_PATH = 'C:/programmering/DTU/robobot/config/camera/calibration_matrix.npy'
+# DIST_PATH = 'C:/programmering/DTU/robobot/config/camera/distortion_coefficients.npy'
+CM_PATH = "config/camera/calibration_matrix.npy"
+DIST_PATH = "config/camera/distortion_coefficients.npy"
+
 
 MTX = np.load(CM_PATH)
 DIST = np.load(DIST_PATH)
@@ -27,18 +29,18 @@ RED_MIN2 = np.array([170, 50, 50])  # Upper range of red
 RED_MAX2 = np.array([180, 255, 255])
 
 
-def plot_mask(mask, title):
-    if isinstance(mask, list):
-        for i in range(len(mask)):
-            plt.subplot(1, len(mask), i+1)
-            plt.imshow(mask[i], cmap='gray')
-            plt.title(title[i])
-            plt.axis('off')
-    else:
-        plt.imshow(mask, cmap='gray')
-        plt.title(title)
-        plt.axis('off')
-    plt.show()
+# def plot_mask(mask, title):
+#     if isinstance(mask, list):
+#         for i in range(len(mask)):
+#             plt.subplot(1, len(mask), i+1)
+#             plt.imshow(mask[i], cmap='gray')
+#             plt.title(title[i])
+#             plt.axis('off')
+#     else:
+#         plt.imshow(mask, cmap='gray')
+#         plt.title(title)
+#         plt.axis('off')
+#     plt.show()
     
 def get_blue_mask(hsv):
     mask = cv2.inRange(hsv, BLUE_MIN, BLUE_MAX)
@@ -165,12 +167,12 @@ def detect_balls(image : np.ndarray, color : Ball_Color = Ball_Color.BLUE, show 
                 cv2.circle(image, (x, y), r, (170, 0, 255), 10)
                 cv2.circle(image, (x, y), 2, (0, 0, 0), 5)
 
-    if show:
-        plt.figure(figsize=(10, 10))
-        plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-        plt.title("Detected Circles")
-        plt.axis("off")
-        plt.show()
+    # if show:
+    #     plt.figure(figsize=(10, 10))
+    #     plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    #     plt.title("Detected Circles")
+    #     plt.axis("off")
+    #     plt.show()
     
     return circles_filtered
 
@@ -199,9 +201,14 @@ def pose_est_ball_from_img(image):
     
     # Detect balls in the image
     detections = detect_balls(image, show=False)
+    if detections is None:
+        return []
     
     # Estimate the pose of each detected ball
-    poses = [pose_estimation_ball(detection, MTX, DIST) for detection in detections]
+    poses = [pose_estimation_ball(detection, MTX, DIST) for detection in detections if detection is not None]
+    
+    # Sort by distance to camera
+    # poses = sorted(poses, key = lambda x: np.linalg.norm(x))
     
     return poses
 

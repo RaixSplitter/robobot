@@ -22,6 +22,7 @@ from modules.task import TaskState
 from modules.axe import Axe
 from modules.eight import Eight
 from modules.roundabout import Roundabout
+from modules.ball_detection import pose_est_ball_from_img
 
 from map import master_map,N,E,S,W
 
@@ -192,6 +193,8 @@ def loop():
 			# # state = State.SOLVING_TASK
 			# # current_task = Task.ROUNDABOUT
 			# state = State.END_PROGRAM
+			im = take_image(save = False, show = False)
+			print(pose_est_ball_from_img(im))
 			pass
 
 		else:
@@ -202,11 +205,12 @@ def loop():
 		# NOTE: You cant watch stream in vscode instance, must be in ssh -X ... forwarding stream in terminal
 		# NOTE: We dont want to stream video while moving normally as it tanks the update speed
 		if os.environ.get('DISPLAY'):
+			pass
 			# Plot map of where we think we are
-			all_poses.append(pose.pose)
-			img = draw_trajectory(all_poses)
-			cv2.imshow("Trajectory", img)
-			cv2.waitKey(1)
+			# all_poses.append(pose.pose)
+			# img = draw_trajectory(all_poses)
+			# cv2.imshow("Trajectory", img)
+			# cv2.waitKey(1)
 
 			# Stream camera feed. NOTE: Tanks the rest of the program
 			# stream_video(draw_debug_overlay=True)
