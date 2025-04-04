@@ -49,3 +49,6 @@ mission_start.bash - Script to start mission app, when start button is pressed (
 ### LED matrix
 The Teensy maintains the LED band. Most LEDs show sensor values. The last 3 LEDs can be set by commands to the Teensy.
 ![led-matrix](.github/media/1500px-Led-band-annotated.jpg)
+
+### Balls
+Note that the ball have radius 41 mm and 49 mm on the short and long axis of it's ellipsoid structure.
