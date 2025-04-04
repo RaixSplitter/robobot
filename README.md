@@ -1,10 +1,10 @@
 # robobot project
 
 ## Todo
-- [ ] Make sure we aren't lost when losing line for 1 frame
-- [ ] Decision making at crossroads
-    - [ ] Routing
-- [ ] 
+- [ ] Move IR sensor
+- [ ] Camera mount
+- [ ] Reprint inner part for new holes
+- [ ] PID loop doesnt work
 
 ## Course
 ![course](.github/media/overview.png)
