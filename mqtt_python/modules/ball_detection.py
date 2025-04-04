@@ -189,17 +189,25 @@ def pose_estimation_ball(detection, mtx, dist):
     Z = (mtx[0,0] * BALL_DIAMETER / 2) / r # 45 cm is the distance to the camera in meters
     return cam_pos_normalized * Z
 
-
+def pose_est_ball_from_img(image):
+    """
+    Estimate the pose of a ball given its image.
+    """
+    
+    #Cut off the top 20% of the image
+    image = image[int(image.shape[0]*0.2):, :]
+    
+    # Detect balls in the image
+    detections = detect_balls(image, show=False)
+    
+    # Estimate the pose of each detected ball
+    poses = [pose_estimation_ball(detection, MTX, DIST) for detection in detections]
+    
+    return poses
 
 
 if __name__ == "__main__":
     # image = cv2.imread("../data/blob/robobot/image_2025_Mar_28_162150_009.jpg")
     image = cv2.imread("C:/Users/marku/Downloads/159016cb-39c7-473a-9487-43dcc69a5e34.jpg")
     # Crop image to remove the top 45% part of the image
-    image = image[int(image.shape[0]*0.2):, :]
-    detections = detect_balls(image, show=True)
-    print("Detected circles:", detections)
-
-    for detection in detections:
-        pose_est = pose_estimation_ball(detection, MTX, DIST)
-        print("Pose estimation:", pose_est)
+    print(pose_est_ball_from_img(image))
