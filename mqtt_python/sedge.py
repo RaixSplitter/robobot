@@ -40,10 +40,9 @@ class SEdge:
 	Kp = 3 # was 0.5
 	Ki = 0
 	Kd = 15 # was 0.4
-
+	max_windup = 1
 	total_error = 0.0
 	previous_error = 0.0
-	cumulative_error = 0.0
 
 	def setup(self):
 		from uservice import service
@@ -283,21 +282,21 @@ class SEdge:
 
 	def pid_loop(self, dt: float, target: float, current:float) -> float:
 		""" Do pid control for a float, that is 0 for straight on line -1 for full left and 1 for full right """
-		error = target - current # error is between -3.5 and 3.5
-		self.cumulative_error += error * dt
-		self.cumulative_error = min(max(self.cumulative_error, -1), 1)
-
-		diff_error = (error - self.previous_error) / dt
-
-		u = self.Kp * error + self.Ki * self.cumulative_error + self.Kd * diff_error
-		u = max(min(u, 1), -1) # bound
-
-		self.previous_error = error
-		
-		# debug print
-		# if self.edge_nUpdCnt % 20 == 0:
-		# 	print(f"u: {u:.3f}, p:{self.Kp * error:.3f}, i:{self.Ki * self.pid_i:.3f}, d:{self.Kd * diff_error:.3f}")
-		return u
+	        error =  target - current # error is between -3.5 and 3.5
+	        self.total_error += error
+	        differential_error = error - self.previous_error
+	        self.previous_error = error
+	
+	        # constrain the integral windup because there might be some undesirable
+	        # behavior otherwise
+	        self.total_error = min([self.total_error, self.max_windup])
+	        self.total_error = max([self.total_error, -self.max_windup])
+	
+	        p_term = self.kp * error
+	        i_term = self.ki * self.total_error * dt
+	        d_term = self.kd * differential_error / dt
+	
+	        return p_term + i_term + d_term
 
 
 	def follow_line(self):
