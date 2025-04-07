@@ -30,6 +30,7 @@ class SEdge:
 	# line detection values
 	target_position = 0.0
 	position_on_line = 0.0
+	last_valid_position = 0.0
 	on_line = False
 	on_crossroad = False
 	do_line_control = False
@@ -37,9 +38,11 @@ class SEdge:
 	sendCalibRequest = False
 
 	# PID loop, perfecet values for speed = 0.2
-	Kp = 3 # was 0.5
-	Ki = 0
-	Kd = 15 # was 0.4
+    # For straights with speed 0.7, Kp=0.3, Kd=0.05
+    # NOTE: This is still a shit controller
+	Kp = 0.6
+	Ki = 0.0
+	Kd = 0.2
 	max_windup = 1
 	total_error = 0.0
 	previous_error = 0.0
@@ -230,15 +233,11 @@ class SEdge:
 
 
 	def detect_line(self):
-		""" """		
+		""" Calculate self.position_on_line, which will be between -3.5 .. 3.5 """		
 		high = self.edge_n.max()
 		average = self.edge_n.mean()
 
-		# print(self.edge / self.edge_n_w)
-
 		# detect if we are at a crossroad
-		# self.on_crossroad = self.line_crossroad_threshold <= average
-		# self.on_crossroad = self.line_crossroad_threshold < average or (self.line_valid_threshold < self.edge_n[0] and self.line_valid_threshold < self.edge_n[-1])
 		# new cross detector: if the width is larger than self.line_crossroad_valid_distance
 		high_list = [i for i,v in enumerate(self.edge_n) if v >= 300]
 		if len(high_list) > 0:
@@ -262,10 +261,14 @@ class SEdge:
 			if v > 0:
 				summ += v
 				posSum += (i+1) * v
+
 		if summ > 0 and self.on_line:
 			self.position_on_line = posSum/summ - 4.5
+			self.last_valid_position = self.position_on_line  # Store last valid position
 		else:
-			self.position_on_line = 0
+			# Use last valid position instead of defaulting to 0
+			# This will make the robot continue turning in the direction it was heading
+			self.position_on_line = self.last_valid_position
 
 		# print(f"low: {self.low}, Crossing threshold: {self.crossingThreshold}, Crossing: {self.crossingLine}, Line valid threshold: {self.lineValidThreshold}, Edges: {self.edge_n}, high: {high}, validline: {self.lineValid}, avg: {average:.2f}")
 
@@ -282,21 +285,23 @@ class SEdge:
 
 	def pid_loop(self, dt: float, target: float, current:float) -> float:
 		""" Do pid control for a float, that is 0 for straight on line -1 for full left and 1 for full right """
-	        error =  target - current # error is between -3.5 and 3.5
-	        self.total_error += error
-	        differential_error = error - self.previous_error
-	        self.previous_error = error
-	
-	        # constrain the integral windup because there might be some undesirable
-	        # behavior otherwise
-	        self.total_error = min([self.total_error, self.max_windup])
-	        self.total_error = max([self.total_error, -self.max_windup])
-	
-	        p_term = self.kp * error
-	        i_term = self.ki * self.total_error * dt
-	        d_term = self.kd * differential_error / dt
-	
-	        return p_term + i_term + d_term
+		error =  target - current # error is between -3.5 and 3.5
+		self.total_error += error
+		differential_error = error - self.previous_error
+		self.previous_error = error
+
+		# constrain the integral windup because there might be some undesirable
+		# behavior otherwise
+		self.total_error = min([self.total_error, self.max_windup])
+		self.total_error = max([self.total_error, -self.max_windup])
+
+		p_term = self.Kp * error
+		i_term = self.Ki * self.total_error * dt
+		d_term = self.Kd * differential_error / dt
+
+		out = p_term + i_term + d_term
+		# print(f"pos on line: {current:.2f}, u: {out:.2f} | p: {p_term:.2f}, i: {i_term:.2f}, d: {d_term:.2f}")
+		return out
 
 
 	def follow_line(self):
@@ -305,7 +310,8 @@ class SEdge:
 
 		dt = self.edge_update_interval / 1000.0 # seconds
 
-		u = self.pid_loop(dt, self.target_position, self.position_on_line)
+		normalized_position = self.position_on_line / 3.5  # normalizefrom -1 to 1
+		u = self.pid_loop(dt, self.target_position, normalized_position)
 
 		command = f"{self.velocity:.3f} {u:.3f} {t.time()}"
 		service.send(self.topicRc, command) # send new turn command, maintaining velocity

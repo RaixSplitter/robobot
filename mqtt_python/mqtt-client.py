@@ -53,7 +53,7 @@ tasks = {
 # TODO: Move more params here
 params = {
 	"time_to_turn": 2, # how long does a normal left or right hand turn take	
-	"move_speed": 0.35, # max 1
+	"move_speed": 0.25, # max 1
 }
 all_poses = []
 # speed        | 0.1 | 0.2 | 0.3
@@ -68,7 +68,6 @@ robo_map = master_map(
 	}, 
 	robot_param=params
 )
-# robo_map = master_map(path = [10,3], turn = {0:None, 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT}, init_node=(7,N), robot_param=params)
 
 
 def loop():
@@ -77,10 +76,12 @@ def loop():
 	state = State.TESTING
 	current_task = None
 	prev_state = None
+	n_frames = 0
 	n_frames_lost = 0
-	
+
 	last_crossroad_time = time.time()
 	state_start_time = time.time()
+	start_time = time.time() # for fps calculation
 
 	n_images = 0		# how many images have we taken, useful for PHOTO MODE
 	max_lost_time = 1.0 # how long can we be lost before trying to recover
@@ -96,6 +97,7 @@ def loop():
 	# main state machine
 	edge.set_line_control_targets(0, 0)
 	while not (service.stop or gpio.stop()):
+		n_frames += 1
 
 		if state == State.START:
 			start = gpio.start() or service.args.now
@@ -186,34 +188,26 @@ def loop():
 
 		# NOTE: This state is the catch all for any misc testing code
 		elif state == State.TESTING:
-			# im = take_image(save = False, show = True)
-			# from modules.aruco import get_pose
-			# save_path = "images/poses.png"
-			# poses = get_pose(im, save_path)
-			# # state = State.SOLVING_TASK
-			# # current_task = Task.ROUNDABOUT
-			# state = State.END_PROGRAM
-			im = take_image(save = False, show = False)
-			print(pose_est_ball_from_img(im))
+			# edge.set_line_control_targets(target_velocity = params["move_speed"], target_position = 0.0)
 			pass
 
 		else:
 			print(f"Unknown state '{state}', ending program")
 			break
 
-
 		# NOTE: You cant watch stream in vscode instance, must be in ssh -X ... forwarding stream in terminal
 		# NOTE: We dont want to stream video while moving normally as it tanks the update speed
+		# NOTE: Plotting anything drops the FPS making the dynamics of for instance the PID controllers act differently
 		if os.environ.get('DISPLAY'):
-			pass
 			# Plot map of where we think we are
-			# all_poses.append(pose.pose)
+			# all_poses.append(pose.pose.copy())
 			# img = draw_trajectory(all_poses)
 			# cv2.imshow("Trajectory", img)
 			# cv2.waitKey(1)
 
 			# Stream camera feed. NOTE: Tanks the rest of the program
 			# stream_video(draw_debug_overlay=True)
+			pass
 
 		if state != prev_state:
 			print(f"% Changed state from {prev_state} to {state}")
@@ -223,6 +217,14 @@ def loop():
 		# tell interface that we are alive
 		service.send(service.topicCmd + "ti/alive", str(service.startTime))
 		time.sleep(0.025) # 40 Hz
+
+		# Print FPS
+		if n_frames % 10 == 0:
+			elapsed_time = time.time() - start_time
+			fps = 10 / elapsed_time
+			print(f"FPS: {fps:.2f}")
+			start_time = time.time()  # Reset timer
+
 
 	# end of mission, turn LEDs off and stop
 	service.send(service.topicCmd + "T0/leds","16 0 0 0") 
@@ -283,58 +285,58 @@ def time_in_state(start_start_time: float) -> float:
 	return time.time() - start_start_time
 
 
-def draw_trajectory(poses, img_size=(500, 500), border=20):
-    """
-    Draws a visualization of the 2D pose path using OpenCV.
-    
-    :param poses: List of (x, y, heading) tuples.
-    :param img_size: Size of the output image (width, height).
-    :param border: Border padding to avoid points touching the edges.
-    :return: OpenCV image with the drawn path.
-    """
-    if not poses:
-        return np.zeros((img_size[1], img_size[0], 3), dtype=np.uint8)
+def draw_trajectory(poses, img_size=(100, 100), border=20):
+	"""
+	Draws a visualization of the 2D pose path using OpenCV.
+	
+	:param poses: List of (x, y, heading) tuples.
+	:param img_size: Size of the output image (width, height).
+	:param border: Border padding to avoid points touching the edges.
+	:return: OpenCV image with the drawn path.
+	"""
+	if not poses:
+		return np.zeros((img_size[1], img_size[0], 3), dtype=np.uint8)
 
-    # Extract x, y coordinates
-    x_vals = [p[0] for p in poses]
-    y_vals = [p[1] for p in poses]
+	# Extract x, y coordinates
+	x_vals = [p[0] for p in poses]
+	y_vals = [p[1] for p in poses]
 
-    # Find min/max for scaling
-    min_x, max_x = min(x_vals), max(x_vals)
-    min_y, max_y = min(y_vals), max(y_vals)
+	# Find min/max for scaling
+	min_x, max_x = min(x_vals), max(x_vals)
+	min_y, max_y = min(y_vals), max(y_vals)
 
-    # Compute scale factors to fit within the image
-    scale_x = (img_size[0] - 2 * border) / (max_x - min_x + 1e-6)
-    scale_y = (img_size[1] - 2 * border) / (max_y - min_y + 1e-6)
-    scale = min(scale_x, scale_y)  # Keep aspect ratio
+	# Compute scale factors to fit within the image
+	scale_x = (img_size[0] - 2 * border) / (max_x - min_x + 1e-6)
+	scale_y = (img_size[1] - 2 * border) / (max_y - min_y + 1e-6)
+	scale = min(scale_x, scale_y)  # Keep aspect ratio
 
-    # Convert to pixel coordinates (flip y-axis since OpenCV has origin at top-left)
-    def to_pixel(x, y):
-        px = int((x - min_x) * scale + border)
-        py = int(img_size[1] - ((y - min_y) * scale + border))  # Invert Y for OpenCV
-        return px, py
+	# Convert to pixel coordinates (flip y-axis since OpenCV has origin at top-left)
+	def to_pixel(x, y):
+		px = int((x - min_x) * scale + border)
+		py = int(img_size[1] - ((y - min_y) * scale + border))  # Invert Y for OpenCV
+		return px, py
 
-    # Create a blank image
-    img = np.zeros((img_size[1], img_size[0], 3), dtype=np.uint8)
+	# Create a blank image
+	img = np.zeros((img_size[1], img_size[0], 3), dtype=np.uint8)
 
-    # Draw path
-    for i in range(1, len(poses)):
-        p1 = to_pixel(*poses[i - 1][:2])
-        p2 = to_pixel(*poses[i][:2])
-        cv2.line(img, p1, p2, (0, 255, 255), 2)  # Yellow path
+	# Draw path
+	for i in range(1, len(poses)):
+		p1 = to_pixel(*poses[i - 1][:2])
+		p2 = to_pixel(*poses[i][:2])
+		cv2.line(img, p1, p2, (0, 255, 255), 2)  # Yellow path
 
-    # Draw current position and heading
-    x, y, heading, _ = poses[-1]
-    px, py = to_pixel(x, y)
-    cv2.circle(img, (px, py), 5, (255, 0, 0), -1)  # Blue dot for current position
+	# Draw current position and heading
+	x, y, heading, _ = poses[-1]
+	px, py = to_pixel(x, y)
+	cv2.circle(img, (px, py), 5, (255, 0, 0), -1)  # Blue dot for current position
 
-    # Draw heading arrow
-    arrow_length = 20  # Adjust arrow length
-    dx = int(arrow_length * np.cos(heading))
-    dy = int(arrow_length * np.sin(heading))
-    cv2.arrowedLine(img, (px, py), (px + dx, py - dy), (0, 255, 0), 2)  # Green arrow
+	# Draw heading arrow
+	arrow_length = 20  # Adjust arrow length
+	dx = int(arrow_length * np.cos(heading))
+	dy = int(arrow_length * np.sin(heading))
+	cv2.arrowedLine(img, (px, py), (px + dx, py - dy), (0, 255, 0), 2)  # Green arrow
 
-    return img
+	return img
 
 
 if __name__ == "__main__":
