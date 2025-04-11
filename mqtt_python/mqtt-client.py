@@ -102,7 +102,10 @@ def loop():
 	if not service.args.now:
 		print("% Ready, press start button")
 		service.send(service.topicCmd + "T0/leds","16 30 30 0") # LED 16: yellow - waiting
-	
+		
+	# put servo down
+	# service.send(service.topicCmd + "T0/servo", "1 -900 200")
+	service.send(service.topicCmd + "T0/svos", "1 -900 200")
 	# main state machine
 	edge.set_line_control_targets(0, 0)
 	while not (service.stop or gpio.stop()):
@@ -180,6 +183,7 @@ def loop():
 
 			sub_state = tasks[current_task].loop()
 			if sub_state == TaskState.FAILURE:
+				print(f"Failed task {current_task}... Trying again")
 				pass
 			elif sub_state == TaskState.EXECUTING:
 				pass
@@ -195,10 +199,16 @@ def loop():
 
 		elif state == State.END_PROGRAM:
 			print("Ending program")
+			time.sleep(2)
+			service.send(service.topicCmd + "T0/svos", "0 -900 200")
 			break
 
 		# NOTE: This state is the catch all for any misc testing code
 		elif state == State.TESTING:
+			# service.send(service.topicCmd + "T0/servo", "1 -900 0.8")
+
+			# current_task = Task.NAVIGATE
+			# state = State.SOLVING_TASK
 			# edge.set_line_control_targets(target_velocity = params["move_speed"], target_position = 0.0)
 			pass
 
@@ -257,7 +267,6 @@ def stream_video(draw_debug_overlay: bool = False) -> bool:
 	if not cam.useCam:
 		return False
 	ok, img, imgTime = cam.getImage()
-	img = cv2.flip(img, 0)
 	if not ok:
 		return False
 	if draw_debug_overlay:
