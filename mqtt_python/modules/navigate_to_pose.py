@@ -4,15 +4,16 @@ from sir import ir
 from sedge import edge
 from spose import pose
 from uservice import service
+from ball_detection import *
 import time 
 
 class NavigateToPose(Task):
-    def __init__(self, pose):
+    def __init__(self):
         super().__init__(name='Navigate')
         self.dont_move = 0.0
         self.drive_fast = 0.75
 
-        self.pose = pose # (x,y,z) x is left/right, y is up/down, z is inwards/outwards
+        self.pose = None  # (x,y,z) x is left/right, y is up/down, z is inwards/outwards
         self.x = self.pose[0]
         self.y = self.pose[1]
         self.z = self.pose[2]
@@ -29,6 +30,7 @@ class NavigateToPose(Task):
         if not self.trip_has_reset:
             pose.tripBreset()
             self.trip_has_reset = True
+            self.pose = pose_est_ball_from_img(image)
 
         # To orient yourself with the ball rotate until heading (h) is:
         # h = arctan(Z/X)
