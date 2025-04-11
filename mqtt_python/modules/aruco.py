@@ -20,6 +20,8 @@ MARKER_POINTS = np.array(
     dtype=np.float32,
 )
 
+OFFSET = 0.08
+
 
 ARUCO_DICT = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
 PARAMETERS = cv2.aruco.DetectorParameters()
@@ -40,7 +42,6 @@ def get_pose(img, save_path=None):
     for _id, _corners in zip(ids, corners):
         ret, rvec, tvec = cv2.solvePnP(MARKER_POINTS, _corners, MTX, DIST)
         if ret:
-
             poses[_id[0]] = (rvec, tvec)
 
         if save_path:
@@ -50,6 +51,13 @@ def get_pose(img, save_path=None):
         cv2.imwrite(save_path, img_plot)
 
     return poses
+
+def drop_point(rvec, tvec):
+    offset_vector = np.dot(cv2.Rodrigues(rvec)[0], np.array([0, 0, OFFSET]))
+    position = tvec.flatten() + offset_vector
+    
+    return position
+    
 
 
 # if __name__ == "__main__":
