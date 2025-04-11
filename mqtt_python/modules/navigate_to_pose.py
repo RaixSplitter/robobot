@@ -5,6 +5,7 @@ from sedge import edge
 from spose import pose
 from uservice import service
 from ball_detection import *
+from scam import cam
 import time 
 
 class NavigateToPose(Task):
@@ -26,11 +27,13 @@ class NavigateToPose(Task):
         self.has_turned = False
         self.drive_straight_to_pose = False
 
-    def navigate(self):
+    def loop(self):
         if not self.trip_has_reset:
             pose.tripBreset()
             self.trip_has_reset = True
-            self.pose = pose_est_ball_from_img(image)
+            ok, img, imgTime = cam.getImage()
+            img = cv2.flip(img, 0)
+            self.pose = pose_est_ball_from_img(img)
 
         # To orient yourself with the ball rotate until heading (h) is:
         # h = arctan(Z/X)
@@ -45,21 +48,21 @@ class NavigateToPose(Task):
                 service.send(service.topicCmd + "ti/rc", "0.0 0.8") # turn left # speed, angle
                 if pose.tripBh <= self.goal_heading:
                     self.has_turned = True
-                    service.send(service.topicCmd + "ti/rc", "0.0 0.0") # turn left # speed, angle
+                    service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
 
             if self.goal_heading > 0:
                 # Turn Right? 
-                service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn left # speed, angle
+                service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn right # speed, angle
                 if pose.tripBh <= self.goal_heading:
                     self.has_turned = True
-                    service.send(service.topicCmd + "ti/rc", "0.0 0.0") # turn left # speed, angle
+                    service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
 
             if self.has_turned:
                 self.drive_straight_to_pose = True
 
         if self.drive_straight_to_pose:
-            service.send(service.topicCmd + "ti/rc", "0.2 0.0") # turn left # speed, angle
+            service.send(service.topicCmd + "ti/rc", "0.2 0.0") # drive straight # speed, angle
             if pose.tripB >= self.length_to_pose - self.distance_from_pose:
-                service.send(service.topicCmd + "ti/rc", "0.0 0.0") # turn left # speed, angle
+                service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
             self.drive_straight_to_pose = False
             return TaskState.SUCCESS
