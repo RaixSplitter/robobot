@@ -1,5 +1,5 @@
 ### Utilities ###
-N,E,S,W = [*"NESW"]
+N,E,S,W = "NESW"
 deg     = {xyz:i*90 for i,xyz in enumerate("NESW")}
 minmax  = lambda a,b: (min(a,b),max(a,b))
 
@@ -18,8 +18,18 @@ node_connections = { # n : ((np, from, to),...)
    10: ((3,S+W,S),(7,S+N,S),(9,S+E,S)),
 }
 
-unique_map_speed = {minmax(1,2): 0.35, minmax(2,6): 0.15} # sorted order, use minmax
-unique_map_turn  = {(0,1,2): 0.5, (7,10,3): 3, (7,10,9): 3} # unique order
+unique_map_speed = { # sorted order, use minmax
+    minmax(1,2): 0.25, 
+    minmax(2,6): 0.15
+} 
+unique_map_turn  = {  # unique order
+    (0,1,2): 0.2, 
+    (7,10,3): 3, 
+    (7,10,9): 3
+}
+unique_pid_values = { # sorted order, use minmax
+    minmax(1, 2) : (2.0, 0.0, 0.4)
+}
 
 ### Main ###
 class master_map:
@@ -36,6 +46,7 @@ class master_map:
         self.default_param = {k:v for k,v in robot_param.items()}
         self.unique_map_speed = unique_map_speed
         self.unique_map_turn  = unique_map_turn
+        self.unique_pid_values = unique_pid_values
         
         ### initiate paths
         for n in self.nodes:
@@ -78,6 +89,7 @@ class master_map:
         self.robot_state = action
         self.robot_param["move_speed"]   = self.unique_map_speed.get(minmax(node,nnext),      self.default_param["move_speed"])
         self.robot_param["time_to_turn"] = self.unique_map_turn.get((self.prev_n,node,nnext), self.default_param["time_to_turn"])
+        self.robot_param["pid_values"]	 = self.unique_pid_values.get(minmax(node,nnext),     self.default_param["pid_values"])
         
         print(f"({node}>{nnext})",action)
         
