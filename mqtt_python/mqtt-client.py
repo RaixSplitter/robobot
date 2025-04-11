@@ -21,6 +21,7 @@ from modules.task import TaskState
 from modules.axe import Axe
 from modules.eight import Eight
 from modules.roundabout import Roundabout
+from modules.navigate_to_pose import NavigateToPose
 from modules.ball_detection import pose_est_ball_from_img
 
 from map import master_map,N,E,S,W
@@ -42,11 +43,13 @@ class Task(Enum):
 	AXE = 0
 	EIGHT = 1
 	ROUNDABOUT = 2
+	NAVIGATE = 3
 
 tasks = {
 	Task.AXE : Axe(),
 	Task.EIGHT : Eight(),
-	Task.ROUNDABOUT : Roundabout()
+	Task.ROUNDABOUT : Roundabout(),
+	Task.NAVIGATE : NavigateToPose()
 }
 
 # Default params, can and will be overwritten in `map.py`
