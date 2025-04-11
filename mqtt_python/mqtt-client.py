@@ -14,7 +14,6 @@ from srobot import robot
 from scam import cam
 from sedge import edge
 from sgpio import gpio
-from scam import cam
 from uservice import service
 from ulog import flog
 
@@ -50,10 +49,11 @@ tasks = {
 	Task.ROUNDABOUT : Roundabout()
 }
 
-# TODO: Move more params here
+# Default params, can and will be overwritten in `map.py`
 params = {
-	"time_to_turn": 2, # how long does a normal left or right hand turn take	
-	"move_speed": 0.25, # max 1
+	"time_to_turn": 2, 				# how long does a normal left or right turn take in seconds
+	"move_speed": 0.25, 			# max 1
+	"pid_values": (0.8, 0.0, 0.1) 	# p, i, d
 }
 all_poses = []
 # speed        | 0.1 | 0.2 | 0.3
@@ -66,7 +66,7 @@ robo_map = master_map(
 	turn = {
 		0:None, 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT
 	}, 
-	robot_param=params
+	robot_param = params
 )
 
 
@@ -80,8 +80,14 @@ def loop():
 	n_frames_lost = 0
 
 	last_crossroad_time = time.time()
+	
+	
+	# For maintaining consistent FPS
 	state_start_time = time.time()
 	start_time = time.time() # for fps calculation
+	target_fps = 20
+	frame_time = 1.0 / target_fps  # Time per frame (~0.05 seconds)
+
 
 	n_images = 0		# how many images have we taken, useful for PHOTO MODE
 	max_lost_time = 1.0 # how long can we be lost before trying to recover
@@ -98,6 +104,7 @@ def loop():
 	edge.set_line_control_targets(0, 0)
 	while not (service.stop or gpio.stop()):
 		n_frames += 1
+		frame_start = time.time()
 
 		if state == State.START:
 			start = gpio.start() or service.args.now
@@ -108,6 +115,7 @@ def loop():
 				print(f"% Starting, in state: {state}")
 
 		elif state == State.FOLLOW_LINE:
+			edge.Kp, edge.Ki, edge.Kd = params['pid_values']
 			edge.set_line_control_targets(target_velocity = params["move_speed"], target_position = 0.0)
 			# Handle losing the line and intiating recovery
 			if edge.on_line:
@@ -115,7 +123,7 @@ def loop():
 			else:
 				n_frames_lost += 1 
 				
-				if 5 < n_frames_lost:
+				if 25 < n_frames_lost:
 					state = State.LOST
 			
 			# If we are at a crossroad, change node
@@ -210,20 +218,24 @@ def loop():
 			pass
 
 		if state != prev_state:
-			print(f"% Changed state from {prev_state} to {state}")
+			print(f"% Changed state from {prev_state} to {state}. With params {params}")
 			state_start_time = time.time()
 			prev_state = state
 
 		# tell interface that we are alive
 		service.send(service.topicCmd + "ti/alive", str(service.startTime))
-		time.sleep(0.025) # 40 Hz
+
+		# Sleep correct amount of time to maintain fps	
+		elapsed = time.time() - frame_start
+		sleep_time = max(0, frame_time - elapsed)  # Sleep only if needed
+		time.sleep(sleep_time)
 
 		# Print FPS
-		if n_frames % 10 == 0:
-			elapsed_time = time.time() - start_time
-			fps = 10 / elapsed_time
+		if n_frames % 100 == 0:
+			elapsed = time.time() - start_time  # Time taken for 100 frames
+			fps = 100 / elapsed  # Frames per second
 			print(f"FPS: {fps:.2f}")
-			start_time = time.time()  # Reset timer
+			start_time = time.time()  # Reset FPS timer
 
 
 	# end of mission, turn LEDs off and stop

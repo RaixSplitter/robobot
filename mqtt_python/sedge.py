@@ -23,10 +23,9 @@ class SEdge:
 
 	# line detection levels
 	line_valid_threshold = 550 # 1000 is calibrated white
-	line_crossroad_threshold = 600 # average above this is assumed to be crossing line
-	line_crossroad_valid_distance = 5
+	line_crossroad_valid_distance = 5 # How many sensors need to see line for it to be a crossroad
 	low_threshold = line_valid_threshold - 100
-	
+
 	# line detection values
 	target_position = 0.0
 	position_on_line = 0.0
@@ -38,11 +37,9 @@ class SEdge:
 	sendCalibRequest = False
 
 	# PID loop, perfecet values for speed = 0.2
-    # For straights with speed 0.7, Kp=0.3, Kd=0.05
-    # NOTE: This is still a shit controller
-	Kp = 0.6
+	Kp = 0.0
 	Ki = 0.0
-	Kd = 0.2
+	Kd = 0.0
 	max_windup = 1
 	total_error = 0.0
 	previous_error = 0.0
