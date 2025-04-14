@@ -80,7 +80,7 @@ def loop():
 				print(f"% Starting, in state: {state}")
 
 		elif state == State.FOLLOW_LINE:
-			if params["task_list"] != None:
+			if len(params["task_list"]) != 0:
 				state = State.SOLVING_TASK
 				continue
 			edge.Kp, edge.Ki, edge.Kd = params['pid_values']
@@ -152,27 +152,28 @@ def loop():
 		elif state == State.SOLVING_TASK:
 			print("Doing task")
 			task_list = params["task_list"]
-			if len(task_list) != 0:
+			if len(task_list) == 0:
 				print("Shouldnt happen you fucked up")
 				state = State.END_PROGRAM
 				continue
 			
-			for current_task in task_list:
-				sub_state = current_task().loop()
-				if sub_state == TaskState.FAILURE:
-					print(f"Failed task {current_task}... Trying again")
-					pass
-				elif sub_state == TaskState.EXECUTING:
-					pass
-				elif sub_state == TaskState.LOST:
-					pass
-				elif sub_state == TaskState.SUCCESS:
-					print(f"Succeeded subtask '{current_task}'")
-				if 100 < time_in_state(state_start_time):
-					print(f"Lost in task {current_task}")
-					state = State.END_PROGRAM
-			else: # when all task are done
-					state = State.END_PROGRAM # TEmporary
+			current_task = task_list[0]
+			sub_state = current_task.loop()
+			if sub_state == TaskState.FAILURE:
+				print(f"Failed task {current_task}... Trying again")
+				pass
+			elif sub_state == TaskState.EXECUTING:
+				pass
+			elif sub_state == TaskState.LOST:
+				pass
+			elif sub_state == TaskState.SUCCESS:
+				print(f"Succeeded subtask '{current_task}'")
+				del task_list[0]
+			if 100 < time_in_state(state_start_time):
+				print(f"Lost in task {current_task}")
+				state = State.END_PROGRAM
+			if len(task_list) == 0: # when all task are done
+				state = State.FOLLOW_LINE
 
 		elif state == State.END_PROGRAM:
 			print("Ending program")
@@ -182,6 +183,8 @@ def loop():
 
 		# NOTE: This state is the catch all for any misc testing code
 		elif state == State.TESTING:
+			params['current_task'] = Task.EIGHT
+			state = State.SOLVING_TASK
 			# service.send(service.topicCmd + "T0/servo", "1 -900 0.8")
 
 			# current_task = Task.NAVIGATE

@@ -26,12 +26,12 @@ class State(Enum):
 	TESTING = 100000
 
 ### TASK ###
-class Task(Enum):
-	AXE        = Axe,
-	EIGHT      = Eight,
-	ROUNDABOUT = Roundabout,
-	NAVIGATE   = NavigateToPose,
-	SEESAW     = Seesaw,
+class Task:
+	AXE        = Axe()
+	EIGHT      = Eight()
+	ROUNDABOUT = Roundabout()
+	NAVIGATE   = NavigateToPose()
+	SEESAW     = Seesaw()
 
 ### ROBOT VALUES ###
 # Default params, can and will be overwritten in `map.py`
@@ -63,7 +63,7 @@ node_connections = { # n : ((np, from, to),...)
 
 uniques = {
 	"map_speed": { # consistent order, use minmax
-		minmax(1,2): 0.25, 
+		minmax(1,2): 0.35, 
 		minmax(1,4): 0.15,
 		minmax(2,6): 0.15,
 	},
@@ -78,12 +78,13 @@ uniques = {
 		minmax(6,7) : 1,
 	},
 	"pid_values": { # consistent order, use minmax
-		minmax(1, 2) : (2.0, 0.0, 0.4)
+		# minmax(1, 2) : (2.0, 0.0, 0.4)
 	},
-	"delegate_task": { 
-		(4,8): (Task.AXE,),
-		(5,"T8"): (Task.EIGHT, Task.ROUNDABOUT),
-		(2,6): (Task.SEESAW,),
+	"delegate_task": {
+		# (0,1): [Task.SEESAW,],
+		(4,8): [Task.AXE,],
+		(5,"T8"): [Task.EIGHT, Task.ROUNDABOUT],
+		(2,6): [Task.SEESAW,],
 	}
 }
 # TODO: destroy path 2,6 once run
