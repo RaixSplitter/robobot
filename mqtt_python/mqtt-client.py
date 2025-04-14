@@ -18,7 +18,7 @@ from ulog import flog
 
 from map import master_map
 from modules.task import TaskState
-from _variables import State, default_params, tasks
+from _variables import State, default_params, Task
 
 all_poses = []
 
@@ -80,8 +80,7 @@ def loop():
 				print(f"% Starting, in state: {state}")
 
 		elif state == State.FOLLOW_LINE:
-			# print(params["current_task"])
-			if params["current_task"] != None:
+			if params["task_list"] != None:
 				state = State.SOLVING_TASK
 				continue
 			edge.Kp, edge.Ki, edge.Kd = params['pid_values']
@@ -152,27 +151,28 @@ def loop():
 
 		elif state == State.SOLVING_TASK:
 			print("Doing task")
-			current_task = params["current_task"]
-			if current_task is None:
+			task_list = params["task_list"]
+			if len(task_list) != 0:
 				print("Shouldnt happen you fucked up")
 				state = State.END_PROGRAM
 				continue
-
-			sub_state = tasks[current_task].loop()
-			if sub_state == TaskState.FAILURE:
-				print(f"Failed task {current_task}... Trying again")
-				pass
-			elif sub_state == TaskState.EXECUTING:
-				pass
-			elif sub_state == TaskState.LOST:
-				pass
-			elif sub_state == TaskState.SUCCESS:
-				print(f"Succeeded subtask '{current_task}'")
-				state = State.END_PROGRAM # TEmporary
-	
-			if 100 < time_in_state(state_start_time):
-				print(f"Lost in task {current_task}")
-				state = State.END_PROGRAM
+			
+			for current_task in task_list:
+				sub_state = current_task().loop()
+				if sub_state == TaskState.FAILURE:
+					print(f"Failed task {current_task}... Trying again")
+					pass
+				elif sub_state == TaskState.EXECUTING:
+					pass
+				elif sub_state == TaskState.LOST:
+					pass
+				elif sub_state == TaskState.SUCCESS:
+					print(f"Succeeded subtask '{current_task}'")
+				if 100 < time_in_state(state_start_time):
+					print(f"Lost in task {current_task}")
+					state = State.END_PROGRAM
+			else: # when all task are done
+					state = State.END_PROGRAM # TEmporary
 
 		elif state == State.END_PROGRAM:
 			print("Ending program")

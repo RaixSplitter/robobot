@@ -1,4 +1,4 @@
-from _variables import Task, N,E,S,W, deg, minmax, node_connections, uniques
+from _variables import N,E,S,W, deg, minmax, node_connections, uniques, default_params
 
 
 ### Main ###
@@ -85,11 +85,11 @@ class master_map:
         self.next_action()
     
     def update(self, prev_n, current_n, next_n):
-        self.robot_param["move_speed"  ] = self.uniques["map_speed"     ].get(minmax(current_n, next_n),  self.default_param["move_speed"  ])
-        self.robot_param["turn_angle"  ] = self.uniques["map_turn"      ].get((prev_n,current_n, next_n), self.default_param["turn_angle"  ])
-        self.robot_param["skip_cross"  ] = self.uniques["skipping_cross"].get(minmax(current_n,next_n),   self.default_param["skip_cross"  ])
-        self.robot_param["pid_values"  ] = self.uniques["pid_values"    ].get(minmax(current_n,next_n),   self.default_param["pid_values"  ])
-        self.robot_param["current_task"] = self.uniques["delegate_task" ].get((current_n,next_n),         self.default_param["current_task"])
+        self.robot_param["move_speed"] = self.uniques["map_speed"     ].get(minmax(current_n, next_n),  self.default_param["move_speed"])
+        self.robot_param["turn_angle"] = self.uniques["map_turn"      ].get((prev_n,current_n, next_n), self.default_param["turn_angle"])
+        self.robot_param["skip_cross"] = self.uniques["skipping_cross"].get(minmax(current_n,next_n),   self.default_param["skip_cross"])
+        self.robot_param["pid_values"] = self.uniques["pid_values"    ].get(minmax(current_n,next_n),   self.default_param["pid_values"])
+        self.robot_param["task_list" ] = self.uniques["delegate_task" ].get((current_n,next_n),         self.default_param["task_list" ])
         
     def change_node(self, node_idx, new_node): # for custom path nodes
         self.nodes[node_idx] = new_node
@@ -105,7 +105,7 @@ class path_node:
     
 
 if __name__ == "__main__":
-    map = master_map([9,2,6,0,5], {0: "U turn", 90:"Turn right", 180:"Straight", 270:"Turn left"}) # init map
+    map = master_map(["T8"], {0: "U turn", 90:"Turn right", 180:"Straight", 270:"Turn left"}, default_params) # init map
 
     while map.queue != None:
         input()
