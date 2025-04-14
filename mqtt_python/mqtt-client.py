@@ -111,16 +111,19 @@ def loop():
 				is_turning = True
 			edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
 			service.send(service.topicCmd + "ti/rc", "0.0 0.8") # turn left # speed, angle
-			# if params["time_to_turn"] < time_in_state(state_start_time):
-			if abs(pose.tripBh) >= params["time_to_turn"]:
+			if abs(pose.tripBh) >= params["turn_angle"]:
 				state = State.FOLLOW_LINE
 				is_turning = False
 
-		elif state == State.TURN_RIGHT: # change to angle
+		elif state == State.TURN_RIGHT:
+			if not is_turning:
+				pose.tripBreset()
+				is_turning = True
 			edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
 			service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn right # speed, angle
-			if params["time_to_turn"] < time_in_state(state_start_time):
+			if abs(pose.tripBh) >= params["turn_angle"]:
 				state = State.FOLLOW_LINE
+				is_turning = False
 
 		elif state == State.LOST:
 			if max_lost_time < time_in_state(state_start_time):

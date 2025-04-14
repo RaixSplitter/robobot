@@ -43,7 +43,7 @@ tasks = {
 # speed        | 0.1 | 0.2 | 0.3
 # 180 deg turn | 4.5 | 4.0 | 4.2
 default_params = {
-	"time_to_turn": pi/2, 				# how long does a normal left or right turn take in seconds
+	"turn_angle": pi/2, 				# how long does a normal left or right turn take in seconds
 	"move_speed": 0.30, 			# max 1
 	"skip_cross": 0,				# number of crossroads that are skipped (E1-4, E6-7)
 	"pid_values": (0.6, 0.0, 0.4), 	# p, i, d
@@ -72,10 +72,10 @@ uniques = {
 		minmax(2,6): 0.15,
 	},
 	"map_turn": { 
-		(0,1,4): pi/5,
+		(0,1,4): pi/5, 
 		(0,1,2): pi/5, 
-		(7,10,3): 3, # change to pi
-		(7,10,9): 3, # change to pi
+		(7,10,3): 3*pi/4, 
+		(7,10,9): 3*pi/4, 
 	},
 	"skipping_cross": { # consistent order, use minmax
 		minmax(1,4) : 1,
