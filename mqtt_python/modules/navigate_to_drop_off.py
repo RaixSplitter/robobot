@@ -29,33 +29,38 @@ class NavigateToDropOff(Task):
         self.rotate_to_goal_heading = True
         self.has_turned = False
         self.drive_straight_to_pose = False
+        self.has_navigated_to_different_aruco = False
+        self.has_faced_center = False
+        self.has_turned_90 = False
+        self.has_gone_around = False
 
         self.is_goal_aruco = False
-        self.goal_aruco = None
+        self.goal_aruco = None # blue ball aruco
         self.read_aruco = None
 
     def loop(self):
         if not self.trip_has_reset:
             pose.tripBreset()
             self.trip_has_reset = True
-            get_new_aruco_poses()
+            self.get_new_aruco_poses()
 
         # To orient yourself with the goal rotate until heading (h) is:
         # h = arctan(Z/X)
         if self.goal_heading == None and self.length_to_pose == None:
-            self.goal_heading = np.arctan2(self.z/self.x)
-            self.length_to_pose = np.sqrt(self.x**2+self.y**2)
+            self.goal_heading = np.arctan2(self.x, self.z)
+            self.length_to_pose = np.sqrt(self.x**2+self.z**2)
         
+        self.is_aruco_drop_off()
         if not self.is_goal_aruco:
-            rotate_to_current_goal_heading()
-            is_aruco_drop_off()
+            self.rotate_to_current_goal_heading()
             if self.length_to_pose > self.distance_from_pose:
                 service.send(service.topicCmd + "ti/rc", "0.2 0.0") # drive straight # speed, angle
                 if pose.tripB >= self.length_to_pose - self.distance_from_pose:
                     service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
-            if not is_aruco_drop_off():
-                navigate_to_different_aruco()
-                get_new_aruco_poses()
+            if not self.is_aruco_drop_off():
+                self.navigate_to_different_aruco()
+                if self.has_navigated_to_different_aruco:
+                    self.get_new_aruco_poses()
 
         if self.is_goal_aruco:
             self.drive_straight_to_pose = True
@@ -66,57 +71,68 @@ class NavigateToDropOff(Task):
                 service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
             self.drive_straight_to_pose = False
             return TaskState.SUCCESS
+            
+    def rotate_to_current_goal_heading(self):
+
+        if self.rotate_to_goal_heading and not self.has_turned:
+                if self.goal_heading < 0:
+                    service.send(service.topicCmd + "ti/rc", "0.0 0.8") # turn left # speed, angle
+                    if pose.tripBh <= self.goal_heading:
+                        self.has_turned = True
+                        service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
+
+                if self.goal_heading > 0:
+                    service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn right # speed, angle
+                    if pose.tripBh <= self.goal_heading:
+                        self.has_turned = True
+                        service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
+
+        return TaskState.EXECUTING
+
+    def is_aruco_drop_off(self):
+        self.is_goal_aruco = self.goal_aruco == self.read_aruco
+        return self.is_goal_aruco
+
+    def navigate_to_different_aruco(self):
+        # Turn Right
+        if not self.has_turned_90:
+            service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn right # speed, angle
+            # 90 grader
+            if pose.tripBh >= -pi/2:
+                self.has_turned_90 = True
+                service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
+                # Reset trip to track later
+                pose.tripBreset()
+        if self.has_turned_90 and not self.has_gone_around:
+            # Go around the sorting center
+            service.send(service.topicCmd + "ti/rc", "0.2 0.2") # turn right # speed, angle
+            # Cirka 50 cm
+            if pose.tripB >= 0.5:
+                self.has_gone_around = True
+                service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
+                # Reset trip to track later
+                pose.tripBreset()
+        if self.has_turned_90 and self.has_gone_around and not self.has_faced_center:
+            # Turn left to face the sorting center
+            service.send(service.topicCmd + "ti/rc", "0.0 0.8") # turn right # speed, angle
+            # 45 degrees
+            if pose.tripBh >= pi/4:
+                self.has_faced_center = True
+                service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
+                # Reset trip to track later
+                pose.tripBreset()
         
-def rotate_to_current_goal_heading(self):
 
-    if self.rotate_to_goal_heading and not self.has_turned:
-            if self.goal_heading < 0:
-                service.send(service.topicCmd + "ti/rc", "0.0 0.8") # turn left # speed, angle
-                if pose.tripBh <= self.goal_heading:
-                    self.has_turned = True
-                    service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
-
-            if self.goal_heading > 0:
-                service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn right # speed, angle
-                if pose.tripBh <= self.goal_heading:
-                    self.has_turned = True
-                    service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
-
-    return TaskState.EXECUTING
-
-def is_aruco_drop_off(self):
-     self.is_goal_aruco = self.goal_aruco == self.read_aruco
-
-def navigate_to_different_aruco(self):
-    # Turn Right
-    service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn right # speed, angle
-    if pose.tripBh >= -pi/2:
-        self.has_turned = True
-        service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
-
-    # Go around the sorting center
-    service.send(service.topicCmd + "ti/rc", "0.2 0.2") # turn right # speed, angle
-    if pose.tripB >= 0.5:
-        self.has_turned = True
-        service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
-
-    # Turn left to face the sorting center
-    service.send(service.topicCmd + "ti/rc", "0.0 0.8") # turn right # speed, angle
-    if pose.tripBh >= pi/4:
-        self.has_turned = True
-        service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
-
-    pose.tripBreset()
-
-def get_new_aruco_poses(self):
-    ok, img, imgTime = cam.getImage()
-    self.aruco_poses = get_pose(img) # Use Aruco pose estimation function TODO
-    for aruco_pose_key in self.aruco_poses.values():
-        pose = self.aruco_poses[aruco_pose_key]
-        distance = np.linalg.norm(pose)
-        self.pose_distances.append((aruco_pose_key,distance))
-    closest_id, _ = min(self.pose_distances, key=lambda x: x[1])
-    self.pose = drop_point(self.aruco_poses[closest_id])
-    self.x = self.pose[0]
-    self.y = self.pose[1]
-    self.z = self.pose[2]
+    def get_new_aruco_poses(self):
+        ok, img, imgTime = cam.getImage()
+        self.aruco_poses = get_pose(img) # Use Aruco pose estimation function TODO
+        for aruco_pose_key in self.aruco_poses.items():
+            aruco_pose = self.aruco_poses[aruco_pose_key]
+            distance = np.linalg.norm(aruco_pose)
+            self.pose_distances.append((aruco_pose_key,distance))
+        closest_id, _ = min(self.pose_distances, key=lambda x: x[1])
+        self.read_aruco = closest_id
+        self.pose = drop_point(self.aruco_poses[closest_id])
+        self.x = self.pose[0]
+        self.y = self.pose[1]
+        self.z = self.pose[2]
