@@ -11,15 +11,16 @@ class Eight(Task):
         super().__init__(name='eight')
         self.action_start_time = None
         
-        self.turning_left = True
+        self.turning_right = True
         self.driving_into_position = False
         self.found_robot = False
         self.waiting_for_ir = False
         self.follow_line = False
         
         self.trip_can_be_reset = True
-        self.left_turn_angle = pi / 2 # 90 degrees
-        self.distance_to_eight = .3 # 30 cm to figure eight
+        self.right_turn_angle = -3.0 # radians
+        self.distance_to_eight = 0.8 # m
+        self.distance_to_drive_eight = 2.5 # m
 
     def loop(self):
         if self.action_start_time is None:
@@ -29,12 +30,12 @@ class Eight(Task):
             pose.tripBreset()
             self.trip_can_be_reset = False
 
-        if self.turning_left:
-            # print("Turning left")
+        if self.turning_right:
+            # print("Turning right")
             edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
-            service.send(service.topicCmd + "ti/rc", "0.0 0.8") # turn left # speed, angle
-            if pose.tripBh >= self.left_turn_angle:
-                self.turning_left = False
+            service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn right # speed, angle
+            if pose.tripBh <= self.right_turn_angle:
+                self.turning_right = False
                 self.driving_into_position = True
                 self.action_start_time = time.time()
                 self.trip_can_be_reset = True
@@ -42,7 +43,7 @@ class Eight(Task):
         if self.driving_into_position:
             # print("Driving straight")
             edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
-            service.send(service.topicCmd + "ti/rc", "0.2 0.0") # turn left # speed, angle
+            service.send(service.topicCmd + "ti/rc", "0.3 0.0") # turn right # speed, angle
             if pose.tripB >= self.distance_to_eight:
                 self.driving_into_position = False
                 self.waiting_for_ir = True
@@ -51,7 +52,7 @@ class Eight(Task):
 
         if self.waiting_for_ir:
             edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
-            service.send(service.topicCmd + "ti/rc", "0.0 0.0") # turn left # speed, angle
+            service.send(service.topicCmd + "ti/rc", "0.0 0.0") # turn right # speed, angle
 
             distance = ir.ir[1]
             if distance < 0.3 and not self.found_robot:
@@ -67,13 +68,12 @@ class Eight(Task):
                 pose.tripBreset()
 
         if self.follow_line:
-            # print("Following line")
-
+            edge.Kp, edge.Ki, edge.Kd = (0.9, 0.0, 0.5) # TODO
             edge.set_line_control_targets(
-                target_velocity=0.2,
+                target_velocity=0.25,
                 target_position=0.0
             )
-            if 2.75 < pose.tripB:
+            if self.distance_to_drive_eight < pose.tripB:
                 return TaskState.SUCCESS
 
 
