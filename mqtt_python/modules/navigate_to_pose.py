@@ -40,7 +40,7 @@ class NavigateToPose(Task):
 				print("LSMLKASDL", found_poses)
 
 			elif detection_target == 'ball':
-				found_poses = pose_est_from_aruco(img)
+				found_poses = pose_est_ball_from_img(img)
 			else:
 				raise ValueError()
 
