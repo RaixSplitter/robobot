@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import time
-from enum import Enum
 
 import cv2
 import numpy as np
@@ -17,67 +16,26 @@ from sgpio import gpio
 from uservice import service
 from ulog import flog
 
+from map import master_map
 from modules.task import TaskState
-from modules.axe import Axe
-from modules.eight import Eight
-from modules.roundabout import Roundabout
-from modules.navigate_to_pose import NavigateToPose
-from modules.ball_detection import pose_est_ball_from_img
+from _variables import State, default_params, tasks
 
-from map import master_map,N,E,S,W
-
-class State(Enum):
-	START = 0
-	PHOTO_MODE = 1
-	FOLLOW_LINE = 2
-	LOST = 4
-	TURN_LEFT = 5
-	TURN_RIGHT = 6
-	TRY_RECOVER = 7
-	SOLVING_TASK = 8
-	END_PROGRAM = 1000
-	TESTING = 100000
-
-
-class Task(Enum):
-	AXE = 0
-	EIGHT = 1
-	ROUNDABOUT = 2
-	NAVIGATE = 3
-
-tasks = {
-	Task.AXE : Axe(),
-	Task.EIGHT : Eight(),
-	Task.ROUNDABOUT : Roundabout(),
-	Task.NAVIGATE : NavigateToPose()
-}
-
-# Default params, can and will be overwritten in `map.py`
-params = {
-	"time_to_turn": 2, 				# how long does a normal left or right turn take in seconds
-	"move_speed": 0.25, 			# max 1
-	"pid_values": (0.8, 0.0, 0.1) 	# p, i, d
-}
 all_poses = []
-# speed        | 0.1 | 0.2 | 0.3
-# 180 deg turn | 4.5 | 4.0 | 4.2
 
 # set title of process, so that it is not just called Python
 setproctitle("mqtt-client")
+params = default_params
 robo_map = master_map(
-	path = [2,6,10,3], 
-	turn = {
-		0:None, 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT
-	}, 
+	# path = [2,6,10,3], 
+	path = [8,], 
+	turn = { 0:None, 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT }, 
 	robot_param = params
 )
 
 
-def loop():
-	""" """
+def loop(): 
 	# state = State.START
 	state = State.TESTING
-	current_task = None
 	prev_state = None
 	n_frames = 0
 	n_frames_lost = 0
@@ -121,6 +79,9 @@ def loop():
 				print(f"% Starting, in state: {state}")
 
 		elif state == State.FOLLOW_LINE:
+			if params["current_task"] != None:
+				state == State.SOLVING_TASK
+				continue
 			edge.Kp, edge.Ki, edge.Kd = params['pid_values']
 			edge.set_line_control_targets(target_velocity = params["move_speed"], target_position = 0.0)
 			# Handle losing the line and intiating recovery
@@ -134,6 +95,9 @@ def loop():
 			
 			# If we are at a crossroad, change node
 			if edge.on_crossroad and 5.0 < time.time() - last_crossroad_time:
+				if params["skip_cross"] > 0:
+					params["skip_cross"] -= 1
+					continue
 				robo_map.next_action()
 				state = robo_map.robot_state
 				last_crossroad_time = time.time()
@@ -176,25 +140,25 @@ def loop():
 			# 	state = State.END_PROGRAM
 
 		elif state == State.SOLVING_TASK:
-			if current_task is None:
+			if params["current_task"] is None:
 				print("Shouldnt happen you fucked up")
 				state = State.END_PROGRAM
 				continue
 
-			sub_state = tasks[current_task].loop()
+			sub_state = tasks[params["current_task"]].loop()
 			if sub_state == TaskState.FAILURE:
-				print(f"Failed task {current_task}... Trying again")
+				print(f"Failed task {params["current_task"]}... Trying again")
 				pass
 			elif sub_state == TaskState.EXECUTING:
 				pass
 			elif sub_state == TaskState.LOST:
 				pass
 			elif sub_state == TaskState.SUCCESS:
-				print(f"Succeeded subtask '{current_task}'")
+				print(f"Succeeded subtask '{params["current_task"]}'")
 				state = State.END_PROGRAM # TEmporary
-
+    
 			if 100 < time_in_state(state_start_time):
-				print(f"Lost in task {current_task}")
+				print(f"Lost in task {params["current_task"]}")
 				state = State.END_PROGRAM
 
 		elif state == State.END_PROGRAM:

@@ -36,7 +36,7 @@ class SEdge:
 
 	sendCalibRequest = False
 
-	# PID loop, perfecet values for speed = 0.2
+	# PID loop, perfected values for speed = 0.2
 	Kp = 0.0
 	Ki = 0.0
 	Kd = 0.0

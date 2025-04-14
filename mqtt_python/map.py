@@ -1,35 +1,5 @@
-### Utilities ###
-N,E,S,W = "NESW"
-deg     = {xyz:i*90 for i,xyz in enumerate("NESW")}
-minmax  = lambda a,b: (min(a,b),max(a,b))
+from _variables import Task, N,E,S,W, deg, minmax, node_connections, uniques
 
-### Connections ###
-node_connections = { # n : ((np, from, to),...)
-    0: ((1,S,E),),
-    1: ((0,E,S),(2,E+N,N),(4,E+S,N)),
-    2: ((1,N,W),(3,S,N),(6,E,W)),
-    3: ((2,N,S),(10,S,N)), # going downstairs: s(7,N+E,W)
-    4: ((1,N,E),(5,S,N),(8,E,W)),
-    5: ((4,N,S),(6,S,N)),
-    6: ((5,N,S),(7,S,N)),
-    7: ((6,N,S),(10,S,N)), # < add 3 for going upstairs
-    8: (),
-    9: ((10,S,N),),
-   10: ((3,S+W,S),(7,S+N,S),(9,S+E,S)),
-}
-
-unique_map_speed = { # sorted order, use minmax
-    minmax(1,2): 0.25, 
-    minmax(2,6): 0.15
-} 
-unique_map_turn  = {  # unique order
-    (0,1,2): 0.2, 
-    (7,10,3): 3, 
-    (7,10,9): 3
-}
-unique_pid_values = { # sorted order, use minmax
-    minmax(1, 2) : (2.0, 0.0, 0.4)
-}
 
 ### Main ###
 class master_map:
@@ -42,11 +12,9 @@ class master_map:
         self.queue        = None
         self.path         = path # nodes the robot has to visit
         self.turn         = turn
-        self.robot_param  = robot_param
-        self.default_param = {k:v for k,v in robot_param.items()}
-        self.unique_map_speed = unique_map_speed
-        self.unique_map_turn  = unique_map_turn
-        self.unique_pid_values = unique_pid_values
+        self.robot_param  = robot_param # from mqtt-client, shared references
+        self.default_param = {k:v for k,v in robot_param.items()} # copy, no references
+        self.uniques       = uniques
         
         ### initiate paths
         for n in self.nodes:
@@ -71,31 +39,24 @@ class master_map:
         elif self.queue == None:
             print("Queue is empty!")
             return
-        node, nnext = self.queue[:2]
+        node, next_n = self.queue[:2]
         # print(node, self.queue, self.current_node.n)
-        out, enter = self.current_node.neighbour[self.nodes[nnext]]
+        out, enter = self.current_node.neighbour[self.nodes[next_n]]
         
         action = ""
-        ##### out-commented for simpler out
-        # if len(out) == 2: 
-        #     extra, out = out
-        #     action += self.turn[(deg[self.current_d]-deg[extra] + 180)%360] + " - "
-        #     self.current_d = extra
-        ## simplere out
+        ##### out-commented for simpler out # if len(out) == 2:  #     extra, out = out #     action += self.turn[(deg[self.current_d]-deg[extra] + 180)%360] + " - " #     self.current_d = extra ## simplere out
         out = out[-1]
         
-        ### Set action/state/params
+        ### Update state
         action = self.turn[(deg[self.current_d]-deg[out])%360]
         self.robot_state = action
-        self.robot_param["move_speed"]   = self.unique_map_speed.get(minmax(node,nnext),      self.default_param["move_speed"])
-        self.robot_param["time_to_turn"] = self.unique_map_turn.get((self.prev_n,node,nnext), self.default_param["time_to_turn"])
-        self.robot_param["pid_values"]	 = self.unique_pid_values.get(minmax(node,nnext),     self.default_param["pid_values"])
+        self.update(self.prev_n, node, next_n)
         
-        print(f"({node}>{nnext})",action)
+        print(f"({node}>{next_n})",action)
         
         ### Update to-next-node + queue
         self.prev_n = self.current_node.n
-        self.current_node = self.nodes[nnext]
+        self.current_node = self.nodes[next_n]
         self.current_d = enter
         self.queue = self.queue[1:]
         
@@ -123,6 +84,13 @@ class master_map:
         self.queue = node_path # set node queue
         self.next_action()
     
+    def update(self, prev_n, current_n, next_n):
+        self.robot_param["move_speed"  ] = self.uniques["map_speed"     ].get(minmax(current_n, next_n), self.default_param["move_speed"  ])
+        self.robot_param["time_to_turn"] = self.uniques["map_turn"      ].get((prev_n,current_n),        self.default_param["time_to_turn"])
+        self.robot_param["skip_cross"  ] = self.uniques["skipping_cross"].get(minmax(current_n,next_n),  self.default_param["skip_cross"  ])
+        self.robot_param["pid_values"  ] = self.uniques["pid_values"    ].get(minmax(current_n,next_n),  self.default_param["pid_values"  ])
+        self.robot_param["current_task"] = self.uniques["delegate_task" ].get((current_n,next_n),        self.default_param["current_task"])
+        
     def change_node(self, node_idx, new_node): # for custom path nodes
         self.nodes[node_idx] = new_node
     
