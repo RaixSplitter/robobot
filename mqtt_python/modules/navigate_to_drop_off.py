@@ -16,10 +16,11 @@ class NavigateToDropOff(Task):
         self.drive_fast = 0.75
 
         self.pose = None  # (x,y,z) x is left/right, y is up/down, z is inwards/outwards
-        self
-        self.x = self.pose[0]
-        self.y = self.pose[1]
-        self.z = self.pose[2]
+        self.pose_distances = []
+        self.aruco_poses = []
+        self.x = None
+        self.y = None
+        self.z = None
         self.goal_heading = None
         self.length_to_pose = None
         self.distance_from_pose = 0.4
@@ -37,10 +38,7 @@ class NavigateToDropOff(Task):
         if not self.trip_has_reset:
             pose.tripBreset()
             self.trip_has_reset = True
-            ok, img, imgTime = cam.getImage()
-            self.poses = get_pose(img) # Use Aruco pose estimation function TODO
-            for 
-            
+            get_new_aruco_poses()
 
         # To orient yourself with the goal rotate until heading (h) is:
         # h = arctan(Z/X)
@@ -57,6 +55,7 @@ class NavigateToDropOff(Task):
                     service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
             if not is_aruco_drop_off():
                 navigate_to_different_aruco()
+                get_new_aruco_poses()
 
         if self.is_goal_aruco:
             self.drive_straight_to_pose = True
@@ -108,3 +107,16 @@ def navigate_to_different_aruco(self):
         service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
 
     pose.tripBreset()
+
+def get_new_aruco_poses(self):
+    ok, img, imgTime = cam.getImage()
+    self.aruco_poses = get_pose(img) # Use Aruco pose estimation function TODO
+    for aruco_pose_key in self.aruco_poses.values():
+        pose = self.aruco_poses[aruco_pose_key]
+        distance = np.linalg.norm(pose)
+        self.pose_distances.append((aruco_pose_key,distance))
+    closest_id, _ = min(self.pose_distances, key=lambda x: x[1])
+    self.pose = drop_point(self.aruco_poses[closest_id])
+    self.x = self.pose[0]
+    self.y = self.pose[1]
+    self.z = self.pose[2]
