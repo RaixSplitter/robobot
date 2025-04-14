@@ -8,7 +8,7 @@ DIST_PATH = "config/camera/distortion_coefficients.npy"
 MTX = np.load(CM_PATH)
 DIST = np.load(DIST_PATH)
 
-MARKER_SIZE = 50
+MARKER_SIZE = 0.035
 
 MARKER_POINTS = np.array(
     [
