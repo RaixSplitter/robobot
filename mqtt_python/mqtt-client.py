@@ -18,7 +18,7 @@ from ulog import flog
 
 from map import master_map
 from modules.task import TaskState
-from _variables import State, default_params, tasks
+from _variables import State, default_params, Task
 
 all_poses = []
 
@@ -27,7 +27,7 @@ setproctitle("mqtt-client")
 params = default_params
 robo_map = master_map(
 	# path = [2,6,10,3], 
-	path = [8,], 
+	path = [2,6,10,3], 
 	turn = { 0:None, 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT }, 
 	robot_param = params
 )
@@ -80,8 +80,7 @@ def loop():
 				print(f"% Starting, in state: {state}")
 
 		elif state == State.FOLLOW_LINE:
-			# print(params["current_task"])
-			if params["current_task"] != None:
+			if len(params["task_list"]) != 0:
 				state = State.SOLVING_TASK
 				continue
 			edge.Kp, edge.Ki, edge.Kd = params['pid_values']
@@ -152,13 +151,14 @@ def loop():
 
 		elif state == State.SOLVING_TASK:
 			print("Doing task")
-			current_task = params["current_task"]
-			if current_task is None:
+			task_list = params["task_list"]
+			if len(task_list) == 0:
 				print("Shouldnt happen you fucked up")
 				state = State.END_PROGRAM
 				continue
-
-			sub_state = tasks[current_task].loop()
+			
+			current_task = task_list[0]
+			sub_state = current_task.loop()
 			if sub_state == TaskState.FAILURE:
 				print(f"Failed task {current_task}... Trying again")
 				pass
@@ -168,11 +168,12 @@ def loop():
 				pass
 			elif sub_state == TaskState.SUCCESS:
 				print(f"Succeeded subtask '{current_task}'")
-				state = State.END_PROGRAM # TEmporary
-	
+				del task_list[0]
 			if 100 < time_in_state(state_start_time):
 				print(f"Lost in task {current_task}")
 				state = State.END_PROGRAM
+			if len(task_list) == 0: # when all task are done
+				state = State.FOLLOW_LINE
 
 		elif state == State.END_PROGRAM:
 			print("Ending program")
@@ -182,6 +183,8 @@ def loop():
 
 		# NOTE: This state is the catch all for any misc testing code
 		elif state == State.TESTING:
+			params['current_task'] = Task.EIGHT
+			state = State.SOLVING_TASK
 			# service.send(service.topicCmd + "T0/servo", "1 -900 0.8")
 
 			# current_task = Task.NAVIGATE

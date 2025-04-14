@@ -5,6 +5,7 @@ from modules.eight import Eight
 from modules.roundabout import Roundabout
 from modules.navigate_to_pose import NavigateToPose
 from modules.ball_detection import pose_est_ball_from_img
+from modules.seesaw import Seesaw
 
 ### Utilities ###
 deg     = {xyz:i*90 for i,xyz in enumerate("NESW")}
@@ -25,18 +26,12 @@ class State(Enum):
 	TESTING = 100000
 
 ### TASK ###
-class Task(Enum):
-	AXE = 0
-	EIGHT = 1
-	ROUNDABOUT = 2
-	NAVIGATE = 3
-
-tasks = {
-	Task.AXE : Axe(),
-	Task.EIGHT : Eight(),
-	Task.ROUNDABOUT : Roundabout(),
-	Task.NAVIGATE : NavigateToPose()
-}
+class Task:
+	AXE        = Axe()
+	EIGHT      = Eight()
+	ROUNDABOUT = Roundabout()
+	NAVIGATE   = NavigateToPose()
+	SEESAW     = Seesaw()
 
 ### ROBOT VALUES ###
 # Default params, can and will be overwritten in `map.py`
@@ -47,7 +42,7 @@ default_params = {
 	"move_speed": 0.30, 			# max 1
 	"skip_cross": 0,				# number of crossroads that are skipped (E1-4, E6-7)
 	"pid_values": (0.6, 0.0, 0.4), 	# p, i, d
-	"current_task": None,
+	"task_list": [],
 }
 
 ### Connections/uniques ###
@@ -57,17 +52,18 @@ node_connections = { # n : ((np, from, to),...)
     2: ((1,N,W),(3,S,N),(6,E,W)),
     3: ((2,N,S),(10,S,N)), # going downstairs: s(7,N+E,W)
     4: ((1,N,E),(5,S,N),(8,E,W)),
-    5: ((4,N,S),(6,S,N)),
+    5: ((4,N,S),(6,S,N),("T8",E,W)),
     6: ((5,N,S),(7,S,N)),
     7: ((6,N,S),(10,S,N)), # < add 3 for going upstairs
     8: (),
     9: ((10,S,N),),
    10: ((3,S+W,S),(7,S+N,S),(9,S+E,S)),
+   "T8":()
 }
 
 uniques = {
 	"map_speed": { # consistent order, use minmax
-		minmax(1,2): 0.25, 
+		minmax(1,2): 0.35, 
 		minmax(1,4): 0.15,
 		minmax(2,6): 0.15,
 	},
@@ -82,9 +78,13 @@ uniques = {
 		minmax(6,7) : 1,
 	},
 	"pid_values": { # consistent order, use minmax
-		minmax(1, 2) : (2.0, 0.0, 0.4)
+		# minmax(1, 2) : (2.0, 0.0, 0.4)
 	},
-	"delegate_task": { 
-		(4,8): Task.AXE,
+	"delegate_task": {
+		# (0,1): [Task.SEESAW,],
+		(4,8): [Task.AXE,],
+		(5,"T8"): [Task.EIGHT, Task.ROUNDABOUT],
+		(2,6): [Task.SEESAW,],
 	}
 }
+# TODO: destroy path 2,6 once run
