@@ -1,4 +1,5 @@
 from enum import Enum
+from math import pi
 from modules.axe import Axe
 from modules.eight import Eight
 from modules.roundabout import Roundabout
@@ -42,10 +43,10 @@ tasks = {
 # speed        | 0.1 | 0.2 | 0.3
 # 180 deg turn | 4.5 | 4.0 | 4.2
 default_params = {
-	"time_to_turn": 2, 				# how long does a normal left or right turn take in seconds
-	"move_speed": 0.25, 			# max 1
+	"time_to_turn": pi/2, 				# how long does a normal left or right turn take in seconds
+	"move_speed": 0.30, 			# max 1
 	"skip_cross": 0,				# number of crossroads that are skipped (E1-4, E6-7)
-	"pid_values": (0.8, 0.0, 0.1), 	# p, i, d
+	"pid_values": (0.6, 0.0, 0.4), 	# p, i, d
 	"current_task": None,
 }
 
@@ -67,21 +68,23 @@ node_connections = { # n : ((np, from, to),...)
 uniques = {
 	"map_speed": { # consistent order, use minmax
 		minmax(1,2): 0.25, 
-		minmax(2,6): 0.15
+		minmax(1,4): 0.15,
+		minmax(2,6): 0.15,
 	},
 	"map_turn": { 
-		(0,1,2): 0.2, 
-		(7,10,3): 3, 
-		(7,10,9): 3
+		(0,1,4): pi/5,
+		(0,1,2): pi/5, 
+		(7,10,3): 3, # change to pi
+		(7,10,9): 3, # change to pi
 	},
 	"skipping_cross": { # consistent order, use minmax
-		minmax(1,4) : 2,
-		minmax(6,7) : 2,
+		minmax(1,4) : 1,
+		minmax(6,7) : 1,
 	},
 	"pid_values": { # consistent order, use minmax
 		minmax(1, 2) : (2.0, 0.0, 0.4)
 	},
 	"delegate_task": { 
-		(4,8): [Task.AXE],
+		(4,8): Task.AXE,
 	}
 }

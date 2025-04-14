@@ -34,8 +34,8 @@ robo_map = master_map(
 
 
 def loop(): 
-	# state = State.START
-	state = State.TESTING
+	state = State.START
+	# state = State.TESTING
 	prev_state = None
 	n_frames = 0
 	n_frames_lost = 0
@@ -48,10 +48,11 @@ def loop():
 	start_time = time.time() # for fps calculation
 	target_fps = 20
 	frame_time = 1.0 / target_fps  # Time per frame (~0.05 seconds)
+	is_turning = False
 
 
 	n_images = 0		# how many images have we taken, useful for PHOTO MODE
-	max_lost_time = 1.0 # how long can we be lost before trying to recover
+	max_lost_time = 2.0 # how long can we be lost before trying to recover
 
 	# Calibration
 	time_between_images = 3.0 	# seconds
@@ -72,15 +73,16 @@ def loop():
 
 		if state == State.START:
 			start = gpio.start() or service.args.now
-			# start = True # NOTE: Temporary overwrite to not need to press button
+			start = True # NOTE: Temporary overwrite to not need to press button
 			
 			if start:
 				state = robo_map.robot_state
 				print(f"% Starting, in state: {state}")
 
 		elif state == State.FOLLOW_LINE:
+			# print(params["current_task"])
 			if params["current_task"] != None:
-				state == State.SOLVING_TASK
+				state = State.SOLVING_TASK
 				continue
 			edge.Kp, edge.Ki, edge.Kd = params['pid_values']
 			edge.set_line_control_targets(target_velocity = params["move_speed"], target_position = 0.0)
@@ -90,25 +92,31 @@ def loop():
 			else:
 				n_frames_lost += 1 
 				
-				if 25 < n_frames_lost:
+				if 20 < n_frames_lost:
 					state = State.LOST
 			
 			# If we are at a crossroad, change node
 			if edge.on_crossroad and 5.0 < time.time() - last_crossroad_time:
+				last_crossroad_time = time.time()
 				if params["skip_cross"] > 0:
+					print("Skipped crossroad",params["skip_cross"])
 					params["skip_cross"] -= 1
 					continue
 				robo_map.next_action()
 				state = robo_map.robot_state
-				last_crossroad_time = time.time()
 		
 		elif state == State.TURN_LEFT:
+			if not is_turning:
+				pose.tripBreset()
+				is_turning = True
 			edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
 			service.send(service.topicCmd + "ti/rc", "0.0 0.8") # turn left # speed, angle
-			if params["time_to_turn"] < time_in_state(state_start_time):
+			# if params["time_to_turn"] < time_in_state(state_start_time):
+			if abs(pose.tripBh) >= params["time_to_turn"]:
 				state = State.FOLLOW_LINE
+				is_turning = False
 
-		elif state == State.TURN_RIGHT:
+		elif state == State.TURN_RIGHT: # change to angle
 			edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
 			service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn right # speed, angle
 			if params["time_to_turn"] < time_in_state(state_start_time):
@@ -140,25 +148,27 @@ def loop():
 			# 	state = State.END_PROGRAM
 
 		elif state == State.SOLVING_TASK:
-			if params["current_task"] is None:
+			print("Doing task")
+			current_task = params["current_task"]
+			if current_task is None:
 				print("Shouldnt happen you fucked up")
 				state = State.END_PROGRAM
 				continue
 
-			sub_state = tasks[params["current_task"]].loop()
+			sub_state = tasks[current_task].loop()
 			if sub_state == TaskState.FAILURE:
-				print(f"Failed task {params["current_task"]}... Trying again")
+				print(f"Failed task {current_task}... Trying again")
 				pass
 			elif sub_state == TaskState.EXECUTING:
 				pass
 			elif sub_state == TaskState.LOST:
 				pass
 			elif sub_state == TaskState.SUCCESS:
-				print(f"Succeeded subtask '{params["current_task"]}'")
+				print(f"Succeeded subtask '{current_task}'")
 				state = State.END_PROGRAM # TEmporary
-    
+	
 			if 100 < time_in_state(state_start_time):
-				print(f"Lost in task {params["current_task"]}")
+				print(f"Lost in task {current_task}")
 				state = State.END_PROGRAM
 
 		elif state == State.END_PROGRAM:

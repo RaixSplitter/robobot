@@ -23,7 +23,7 @@ class SEdge:
 
 	# line detection levels
 	line_valid_threshold = 550 # 1000 is calibrated white
-	line_crossroad_valid_distance = 5 # How many sensors need to see line for it to be a crossroad
+	line_crossroad_valid_distance = 4 # How many sensors need to see line for it to be a crossroad
 	low_threshold = line_valid_threshold - 100
 
 	# line detection values

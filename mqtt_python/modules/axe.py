@@ -2,6 +2,7 @@ from modules.task import Task, TaskState
 from sir import ir
 from sedge import edge
 from spose import pose
+from uservice import service
 import time 
 
 class Axe(Task):
@@ -24,10 +25,22 @@ class Axe(Task):
         self.cross_length = 1.0
 
         self.is_running = False  
+        self.current_trip = 0
+        self.check_point_trip = 0
+        self.checkpoint_set = False
+        self.drive_forward = True
 
     def loop(self):
         distance = ir.ir[1]
-
+        if not self.checkpoint_set:
+            self.check_point_trip = pose.tripB
+        if self.drive_forward:
+            service.send(service.topicCmd + "ti/rc", "0.1 0.0") # drive straight # speed, angle
+            # print(f"{pose.tripB:.2f}, {self.length_to_pose}")
+            if pose.tripB-self.check_point_trip >= 0.4:
+                service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
+                self.drive_forward = False
+        
         if distance < 0.40:
             if not self.obstacle_active:
                 # We cant go through the axe right now

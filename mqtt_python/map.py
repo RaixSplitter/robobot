@@ -85,11 +85,11 @@ class master_map:
         self.next_action()
     
     def update(self, prev_n, current_n, next_n):
-        self.robot_param["move_speed"  ] = self.uniques["map_speed"     ].get(minmax(current_n, next_n), self.default_param["move_speed"  ])
-        self.robot_param["time_to_turn"] = self.uniques["map_turn"      ].get((prev_n,current_n),        self.default_param["time_to_turn"])
-        self.robot_param["skip_cross"  ] = self.uniques["skipping_cross"].get(minmax(current_n,next_n),  self.default_param["skip_cross"  ])
-        self.robot_param["pid_values"  ] = self.uniques["pid_values"    ].get(minmax(current_n,next_n),  self.default_param["pid_values"  ])
-        self.robot_param["current_task"] = self.uniques["delegate_task" ].get((current_n,next_n),        self.default_param["current_task"])
+        self.robot_param["move_speed"  ] = self.uniques["map_speed"     ].get(minmax(current_n, next_n),  self.default_param["move_speed"  ])
+        self.robot_param["time_to_turn"] = self.uniques["map_turn"      ].get((prev_n,current_n, next_n), self.default_param["time_to_turn"])
+        self.robot_param["skip_cross"  ] = self.uniques["skipping_cross"].get(minmax(current_n,next_n),   self.default_param["skip_cross"  ])
+        self.robot_param["pid_values"  ] = self.uniques["pid_values"    ].get(minmax(current_n,next_n),   self.default_param["pid_values"  ])
+        self.robot_param["current_task"] = self.uniques["delegate_task" ].get((current_n,next_n),         self.default_param["current_task"])
         
     def change_node(self, node_idx, new_node): # for custom path nodes
         self.nodes[node_idx] = new_node
