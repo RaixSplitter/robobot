@@ -8,7 +8,14 @@ from modules.ball_detection import *
 from modules.aruco import get_pose
 from scam import cam
 import time 
+import logging
 
+logging.basicConfig(filename='navigate_to_pose_log',
+                    filemode='a',
+                    format='%(asctime)s,%(msecs)03d %(name)s %(levelname)s %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S',
+                    level=logging.DEBUG)
+LOGGER = logging.getLogger(__name__)
 class NavigateToPose(Task):
 	def __init__(self):
 		super().__init__(name='Navigate')
@@ -28,11 +35,10 @@ class NavigateToPose(Task):
 		self.rotate_to_goal_heading = True
 		self.has_turned = False
 		self.drive_straight_to_pose = False
-  
 	
-
 	def loop(self, detection_target: str = 'ball'):
 		if not self.trip_has_reset:
+			LOGGER.debug("Trip is being reset")
 			pose.tripBreset()
 			self.trip_has_reset = True
 			ok, img, imgTime = cam.getImage()
@@ -63,11 +69,13 @@ class NavigateToPose(Task):
 		# h = arctan(Z/X)
 
 		if self.goal_heading == None and self.length_to_pose == None:
+			LOGGER.debug("Recomputing heading and length to ball")
 			self.goal_heading = np.arctan2(self.x, self.z)
 			self.length_to_pose = np.sqrt(self.x**2+self.z**2)
 			print("Heading to goal:", self.goal_heading, "Distance to goal:", self.length_to_pose)
 		
 		if self.rotate_to_goal_heading and not self.has_turned:
+			LOGGER.debug("Turning to ball position (hopefully)")
 			if self.goal_heading < 0: #Turn Left
 				# Turn Left?
 				if -pose.tripBh <= self.goal_heading:
@@ -91,6 +99,7 @@ class NavigateToPose(Task):
 				self.drive_straight_to_pose = True
 
 		if self.drive_straight_to_pose:
+			LOGGER.debug("Driving to ball position")
 			service.send(service.topicCmd + "ti/rc", "0.1 0.0") # drive straight # speed, angle
    
 
@@ -101,6 +110,7 @@ class NavigateToPose(Task):
 			print(condition_last, condition_distance_threshhold, self.has_turned)
    
 			if condition_last and condition_distance_threshhold:
+				LOGGER.debug("Lowering arm to capture ball")
 				service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
 				self.drive_straight_to_pose = False
 				service.send(service.topicCmd + "T0/servo", "1 100 200") # down position
@@ -108,7 +118,7 @@ class NavigateToPose(Task):
    
 
 			if condition_distance_threshhold:
-				print("Stopping")
+				LOGGER.debug("Stopping")
 				service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
 
 				self.trip_has_reset = False
