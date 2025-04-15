@@ -18,8 +18,8 @@ MTX = np.load(CM_PATH)
 DIST = np.load(DIST_PATH)
 BALL_DIAMETER = 0.045  # meters
 
-BLUE_MIN = np.array([90, 50, 50])
-BLUE_MAX = np.array([130, 255, 255])
+BLUE_MIN = np.array([100,90,0])
+BLUE_MAX = np.array([150, 255, 255])
 ORANGE_MIN = np.array([0, 100, 0])
 ORANGE_MAX = np.array([12, 255, 255])
 # Adjusted RED_MIN and RED_MAX to cover the red hue range

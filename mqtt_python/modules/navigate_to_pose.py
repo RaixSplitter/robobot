@@ -14,7 +14,7 @@ from dataclasses import dataclass
 
 logging.basicConfig(
 	filename="navigate_to_pose_log",
-	filemode="a",
+	filemode="w",
 	format="%(asctime)s,%(msecs)03d %(name)s %(levelname)s %(message)s",
 	datefmt="%Y-%m-%d %H:%M:%S",
 	level=logging.DEBUG,
@@ -46,7 +46,7 @@ class Target:
 	
 	def set_pose(self, pose):
 		x, y, z = pose
-		self.x, self.y, self,z = x, y, z
+		self.x, self.y, self.z = x, y, z
 		self.angle = np.arctan2(x, z)
 		self.dist = np.sqrt(x**2 + z**2)
 		
@@ -88,15 +88,15 @@ class NavigateToPose(Task):
 		self.states_q.append(state)
   
 	def stop(self):
-		service.send(service.topCmd + "ti/rc", "0.0 0.0")
+		service.send(service.topicCmd + "ti/rc", "0.0 0.0")
 		
 	def turn_to_target(self):
 		pose.tripBreset()
 		if self.target.angle <= -self.ANGLEMARGIN: #If angle is less than margin
-			self.add_state(State.TURN_RIGHT)
+			self.add_state(State.TURN_LEFT)
 			return False
 		elif self.target.angle >= self.ANGLEMARGIN:#If angle is more than margin
-			self.add_state(State.TURN_LEFT)
+			self.add_state(State.TURN_RIGHT)
 			return False
 		else: #Finished turning
 			return True
@@ -105,10 +105,10 @@ class NavigateToPose(Task):
 		pose.tripBreset()
 		
 		if self.target.dist - self.OFFSET <= -self.DISTMARGIN:
-			self.add_state(State.FORWARD)
+			self.add_state(State.REVERSE)
 			return False
 		elif self.target.dist - self.OFFSET >= self.DISTMARGIN:
-			self.add_state(State.REVERSE)
+			self.add_state(State.FORWARD)
 			return False
 		else:
 			return True
@@ -116,36 +116,41 @@ class NavigateToPose(Task):
 
 	def turn_left(self):
 		self.stop()
-		if -pose.tripBh <= self.target.angle: # If done turning
+		if pose.tripBh >= -self.target.angle: # If done turning
 			self.stop()
 			self.change_state()
 		else:
-			self.turn(direction=True) # Turn right
+			self.turn(left=True) # Turn right
 	
 	def turn_right(self):
 		self.stop()
-		if pose.tripBh >= self.target.angle: # If done turning
+		
+		if pose.tripBh <= -self.target.angle: # If done turning
 			self.stop()
 			self.change_state()
 		else:
-			self.turn(direction=False) # Turn right
+			self.turn(left=False) # Turn right
 
 	
 		
 
-	def turn(self, direction : bool = False):
+	def turn(self, left : bool = False):
 		"""
 		Turns the robot either left or right
 
 		ARGS:
-			direction : bool, if False turns left, if True turns right.
+			left : bool, if False turns left, if True turns right.
 		RETURN:
 			None
   		"""
-		if direction: #Turns right
-			service.send(service.topCmd + "ti/rc", f"0.0 {-self.TURNRATE}")
-		else: # Turns left
-			service.send(service.topCmd + "ti/rc", f"0.0 {self.TURNRATE}")
+		if left: #Turns left
+			service.send(service.topicCmd + "ti/rc", f"0.0 {self.TURNRATE}")
+	  
+	  
+		else: # Turns right
+			service.send(service.topicCmd + "ti/rc", f"0.0 {-self.TURNRATE}")
+	  
+	  
 	
 	def drive(self, reverse : bool = False):
 		"""
@@ -157,12 +162,12 @@ class NavigateToPose(Task):
 			None
   		"""
 		if reverse: #Backwards
-			service.send(service.topCmd + "ti/rc", f"{-self.SPEED} 0.0")
+			service.send(service.topicCmd + "ti/rc", f"{-self.SPEED} 0.0")
 		else: #Forward
-			service.send(service.topCmd + "ti/rc", f"{self.SPEED} 0.0")
+			service.send(service.topicCmd + "ti/rc", f"{self.SPEED} 0.0")
    
 	def forward(self):
-     	#Calculate missing distance
+	 	#Calculate missing distance
 		if pose.tripB >= self.target.dist - self.OFFSET:
 			self.stop()
 			self.change_state()
@@ -171,7 +176,7 @@ class NavigateToPose(Task):
 	
 	def reverse(self):
 		#Calculate missing distance
-		if pose.tripB <= self.target.dist - self.OFFSET:
+		if pose.tripB <= self.target.dist + self.OFFSET:
 			self.stop()
 			self.change_state()
 		else:
@@ -182,13 +187,11 @@ class NavigateToPose(Task):
 		return TaskState.SUCCESS
 	
 	def get_pose(self) -> bool:
-		self.stop()
-  
 		ok, img, imgTime = cam.getImage() # Get image
   
 		# Get pose
 		if self.target.type == PoseTarget.BLUE_BALL:
-			poses = pose_est_ball_from_img(img, Ball_Color=Ball_Color.BLUE)
+			poses = pose_est_ball_from_img(img, Ball_Color=Ball_Color.RED)
 		if len(poses) == 0: #If no poses turn
 			self.turn()
 			return
@@ -202,13 +205,13 @@ class NavigateToPose(Task):
 			return		
 
 		# VALIDATION STEP 2 DRIVE
-		if not self.drive_to_target(): #Examine if robot needs to drive to target or backoff
+		elif not self.drive_to_target(): #Examine if robot needs to drive to target or backoff
 			self.change_state()
 			return
 		
 		#endregion
 
-		self.state = State.CAPTURE
+		# self.state = State.CAPTURE
 		return		
 
 	def loop(self, detection_target: str = "ball"):
@@ -217,6 +220,6 @@ class NavigateToPose(Task):
 
 		if error:
 			return TaskState.FAILURE
-      
+	  
 		return TaskState.EXECUTING
 
