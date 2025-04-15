@@ -85,27 +85,38 @@ class master_map:
         self.next_action()
     
     def update(self, prev_n, current_n, next_n):
-        self.robot_param["move_speed"] = self.uniques["map_speed"     ].get(minmax(current_n, next_n),  self.default_param["move_speed"])
-        self.robot_param["turn_angle"] = self.uniques["map_turn"      ].get((prev_n,current_n, next_n), self.default_param["turn_angle"])
-        self.robot_param["skip_cross"] = self.uniques["skipping_cross"].get(minmax(current_n,next_n),   self.default_param["skip_cross"])
-        self.robot_param["pid_values"] = self.uniques["pid_values"    ].get(minmax(current_n,next_n),   self.default_param["pid_values"])
-        self.robot_param["task_list" ] = self.uniques["delegate_task" ].get((current_n,next_n),         self.default_param["task_list" ])
+        direction = minmax(current_n, next_n)
+        self.robot_param["move_speed"] = self.uniques.map_speed.get(direction,                 self.default_param["move_speed"])
+        self.robot_param["turn_angle"] = self.uniques.map_turn.get((prev_n,current_n, next_n), self.default_param["turn_angle"])
+        self.robot_param["skip_cross"] = self.uniques.cross_skip.get(direction,                self.default_param["skip_cross"])
+        self.robot_param["pid_values"] = self.uniques.pid_values.get(direction,                self.default_param["pid_values"])
+        self.robot_param["task_list" ] = self.uniques.delegate_task.get((current_n,next_n),    self.default_param["task_list" ])
+        if direction in self.uniques.limits and self.uniques.limits[direction] != 0:
+            self.uniques.limits[direction] -= 1
+            if self.uniques.limits[direction] != 0:
+                return
+            self.nodes[current_n].remove_path(self.nodes[next_n])
+            self.nodes[next_n].remove_path(self.nodes[current_n])
         
     def change_node(self, node_idx, new_node): # for custom path nodes
         self.nodes[node_idx] = new_node
     
-        
+class path_node: pass # for type options
 class path_node:
-    def __init__(self, n):
+    def __init__(self, n : int):      
         self.n = n
         self.neighbour = dict()
     
-    def add_path(self, nn, out_in):
+    def add_path(self, nn : path_node, out_in : str):
         self.neighbour[nn] = out_in 
+    
+    def remove_path(self, nn : path_node):
+        if nn in self.neighbour:
+            del self.neighbour[nn]
     
 
 if __name__ == "__main__":
-    map = master_map(["T8"], {0: "U turn", 90:"Turn right", 180:"Straight", 270:"Turn left"}, default_params) # init map
+    map = master_map([2,6,2,6], {0: "U turn", 90:"Turn right", 180:"Straight", 270:"Turn left"}, default_params) # init map
 
     while map.queue != None:
         input()
