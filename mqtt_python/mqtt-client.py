@@ -173,6 +173,7 @@ def loop():
 				print(f"Lost in task {current_task}")
 				state = State.END_PROGRAM
 			if len(task_list) == 0: # when all task are done
+				print("All task done")
 				state = State.FOLLOW_LINE
 
 		elif state == State.END_PROGRAM:
