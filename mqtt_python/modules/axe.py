@@ -22,13 +22,16 @@ class Axe(Task):
         self.free_durations = []       
 
         self.cross_time = 2.0
-        self.cross_length = 1.0
+        self.cross_length = 2.0
 
         self.is_running = False  
         self.current_trip = 0
         self.check_point_trip = 0
         self.checkpoint_set = False
         self.drive_forward = True
+
+        self.turn_to_face_ball = False
+        self.turn_angle = 3
 
     def loop(self):
         distance = ir.ir[1]
@@ -60,6 +63,7 @@ class Axe(Task):
                     target_position=0.0
                 )
                 pose.tripBreset()
+                
 
         
         else:
@@ -89,7 +93,18 @@ class Axe(Task):
         
         if self.have_run_through:
             edge.set_line_control_targets(target_velocity=0.0, target_position=0.0)
-            return TaskState.SUCCESS
-
+            pose.tripBreset()
+            self.turn_to_face_ball = True
+        
+        if self.turn_to_face_ball:
+            # Turn Right? 
+            if abs(pose.tripBh) >= self.goal_heading:
+                print("Done turning right")
+                self.has_turned = True
+                service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
+                return TaskState.SUCCESS
+            else:
+                service.send(service.topicCmd + "ti/rc", "0.0 -0.1") # turn right # speed, angle
+                
         # time.sleep(0.05)
         return TaskState.EXECUTING

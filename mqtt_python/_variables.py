@@ -1,11 +1,12 @@
 from enum import Enum
 from math import pi
-# from modules.axe import Axe
-# from modules.eight import Eight
-# from modules.roundabout import Roundabout
-# from modules.navigate_to_pose import NavigateToPose
-# from modules.ball_detection import pose_est_ball_from_img
-# from modules.seesaw import Seesaw
+from modules.axe import Axe
+from modules.eight import Eight
+from modules.roundabout import Roundabout
+from modules.navigate_to_pose import NavigateToPose
+from modules.ball_detection import pose_est_ball_from_img
+from modules.seesaw import Seesaw
+from modules.deliver_golf_ball import DeliverGolfBall
 
 ### Utilities ###
 deg     = {xyz:i*90 for i,xyz in enumerate("NESW")}
@@ -26,12 +27,13 @@ class State(Enum):
 	TESTING = 100000
 
 ### TASK ###
-# class Task:
-# 	AXE        = Axe()
-# 	EIGHT      = Eight()
-# 	ROUNDABOUT = Roundabout()
-# 	NAVIGATE   = NavigateToPose()
-# 	SEESAW     = Seesaw()
+class Task:
+	AXE        = Axe()
+	EIGHT      = Eight()
+	ROUNDABOUT = Roundabout()
+	NAVIGATE   = NavigateToPose()
+	SEESAW     = Seesaw()
+	DELIVER_GOLF_BALL = DeliverGolfBall()
 
 ### ROBOT VALUES ###
 # Default params, can and will be overwritten in `map.py`
@@ -85,9 +87,9 @@ class uniques:
 		# minmax(1, 2) : (2.0, 0.0, 0.4)
 	}
 	delegate_task = {
-		# (0,1): [Task.SEESAW,],
-		# (4,8): [Task.AXE,],
-		# (5,100): [Task.EIGHT, Task.ROUNDABOUT],
-		# (2,6): [Task.SEESAW,],
+		(0,1): [Task.DELIVER_GOLF_BALL,],
+		(4,8): [Task.AXE,],
+		(5,100): [Task.EIGHT, Task.ROUNDABOUT],
+		(2,6): [Task.SEESAW,],
 	}
 # TODO: destroy path 2,6 once run

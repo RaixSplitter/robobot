@@ -37,6 +37,7 @@ class NavigateToDropOff(Task):
         self.is_goal_aruco = False
         self.goal_aruco = None # blue ball aruco
         self.read_aruco = None
+        self.goal_ids = [14,15]
 
     def loop(self):
         if not self.trip_has_reset:
@@ -53,10 +54,11 @@ class NavigateToDropOff(Task):
         self.is_aruco_drop_off()
         if not self.is_goal_aruco:
             self.rotate_to_current_goal_heading()
-            if self.length_to_pose > self.distance_from_pose:
+            if self.length_to_pose >= self.distance_from_pose:
                 service.send(service.topicCmd + "ti/rc", "0.2 0.0") # drive straight # speed, angle
                 if pose.tripB >= self.length_to_pose - self.distance_from_pose:
                     service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
+                    pose.tripBreset()
             if not self.is_aruco_drop_off():
                 self.navigate_to_different_aruco()
                 if self.has_navigated_to_different_aruco:
@@ -69,6 +71,7 @@ class NavigateToDropOff(Task):
             service.send(service.topicCmd + "ti/rc", "0.2 0.0") # drive straight # speed, angle
             if pose.tripB >= self.length_to_pose - self.distance_from_pose:
                 service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
+                pose.tripBreset()
             self.drive_straight_to_pose = False
             return TaskState.SUCCESS
             
@@ -90,7 +93,7 @@ class NavigateToDropOff(Task):
         return TaskState.EXECUTING
 
     def is_aruco_drop_off(self):
-        self.is_goal_aruco = self.goal_aruco == self.read_aruco
+        self.is_goal_aruco = self.read_aruco in self.goal_ids
         return self.is_goal_aruco
 
     def navigate_to_different_aruco(self):
@@ -112,6 +115,7 @@ class NavigateToDropOff(Task):
                 service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
                 # Reset trip to track later
                 pose.tripBreset()
+                self.has_gone_around = True
         if self.has_turned_90 and self.has_gone_around and not self.has_faced_center:
             # Turn left to face the sorting center
             service.send(service.topicCmd + "ti/rc", "0.0 0.8") # turn right # speed, angle

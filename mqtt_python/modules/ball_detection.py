@@ -134,9 +134,9 @@ def detect_balls(image : np.ndarray, color : Ball_Color = Ball_Color.BLUE, show 
         
     mask_applied = cv2.bitwise_and(image, image, mask=mask)
     
-    if show:
-        plot_mask(mask, ["Blue", "Red", "White", "Orange"])
-        plot_mask(cv2.cvtColor(mask_applied, cv2.COLOR_BGR2RGB) , ["Blue", "Red", "White", "Orange"])
+    # if show:
+    #     plot_mask(mask, ["Blue", "Red", "White", "Orange"])
+    #     plot_mask(cv2.cvtColor(mask_applied, cv2.COLOR_BGR2RGB) , ["Blue", "Red", "White", "Orange"])
 
     
     gray = cv2.cvtColor(mask_applied, cv2.COLOR_BGR2GRAY)
@@ -191,7 +191,7 @@ def pose_estimation_ball(detection, mtx, dist):
     Z = (mtx[0,0] * BALL_DIAMETER / 2) / r # 45 cm is the distance to the camera in meters
     return cam_pos_normalized * Z
 
-def pose_est_ball_from_img(image):
+def pose_est_ball_from_img(image, Ball_Color = Ball_Color.BLUE):
     """
     Estimate the pose of a ball given its image.
     """
@@ -200,7 +200,7 @@ def pose_est_ball_from_img(image):
     image = image[int(image.shape[0]*0.2):, :]
     
     # Detect balls in the image
-    detections = detect_balls(image, show=False)
+    detections = detect_balls(image, show=False, Ball_Color = Ball_Color)
     if detections is None:
         return []
     
