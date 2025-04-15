@@ -18,7 +18,7 @@ class Roundabout(Task):
         # variables
         self.robot_speed = 0.1
         self.turn_time   = 0.5 # rad
-        self.current_action = [f"{self.robot_speed} 0.0", f"0.0 {self.turn_angle}"]
+        self.current_action = [f"{self.robot_speed} 0.2", f"0.0 1.0"]
         
         self.is_turning     = False
         self.set_turn_time  = 0
@@ -48,7 +48,7 @@ class Roundabout(Task):
             return TaskState.SUCCESS
         
         if self.is_turning:
-            if (time() - self.set_turn_time) >= self.turn_angle:
+            if (time() - self.set_turn_time) >= self.turn_time:
                 self.is_turning = False
                 self.current_action = list(reversed(self.current_action))
             return TaskState.EXECUTING
