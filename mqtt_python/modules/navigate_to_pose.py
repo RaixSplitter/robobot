@@ -20,12 +20,16 @@ class NavigateToPose(Task):
 		self.z = None
 		self.goal_heading = None
 		self.length_to_pose = None
-		self.distance_from_pose = 0.16 # meters
+		self.distances_from_pose = [0.5, 0.4, 0.3, 0.2, 0.16]
+		self.distance_from_pose = self.distances_from_pose[0] # meters
+		self.distance_idx = 0
 		
 		self.trip_has_reset = False
 		self.rotate_to_goal_heading = True
 		self.has_turned = False
 		self.drive_straight_to_pose = False
+  
+	
 
 	def loop(self, detection_target: str = 'aruco'):
 		if not self.trip_has_reset:
@@ -44,9 +48,11 @@ class NavigateToPose(Task):
 			else:
 				raise ValueError()
 
-			if len(found_poses) == 0:
+			if len(found_poses) == 0: # If no objects found
 				self.trip_has_reset = False
 				print("Error: didnt find any objects in task")
+    
+				#TODO : add a way to retry finding the object
 				return TaskState.FAILURE
 			
 			self.x = found_poses[0][0]
@@ -62,7 +68,7 @@ class NavigateToPose(Task):
 			print("Heading to goal:", self.goal_heading, "Distance to goal:", self.length_to_pose)
 		
 		if self.rotate_to_goal_heading and not self.has_turned:
-			if self.goal_heading < 0:
+			if self.goal_heading < 0: #Turn Left
 				# Turn Left?
 				if -pose.tripBh <= self.goal_heading:
 					print("Done turning left")
@@ -71,7 +77,7 @@ class NavigateToPose(Task):
 				else:
 					service.send(service.topicCmd + "ti/rc", "0.0 0.1") # turn left # speed, angle
 
-			if self.goal_heading > 0:
+			if self.goal_heading > 0: #Turn Right
 				# Turn Right? 
 				if abs(pose.tripBh) >= self.goal_heading:
 					print("Done turning right")
@@ -87,10 +93,24 @@ class NavigateToPose(Task):
 		if self.drive_straight_to_pose:
 			service.send(service.topicCmd + "ti/rc", "0.1 0.0") # drive straight # speed, angle
 			print(f"{pose.tripB:.2f}, {self.length_to_pose}")
-			if pose.tripB >= self.length_to_pose - self.distance_from_pose:
+   
+
+			condition_last = self.distance_idx == len(self.distances_from_pose) - 1
+			condition_distance_threshhold = pose.tripB >= self.length_to_pose - self.distance_from_pose
+			if condition_last and condition_distance_threshhold:
 				service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
 				self.drive_straight_to_pose = False
 				service.send(service.topicCmd + "T0/servo", "1 230 200") # down position
 				return TaskState.SUCCESS
+   
+
+			if condition_distance_threshhold:
+				print("Stopping")
+				service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
+
+				self.trip_has_reset = False
+				self.distance_idx += 1
+				self.distance_from_pose = self.distances_from_pose[self.distance_idx]
+    
 			
 		return TaskState.EXECUTING
