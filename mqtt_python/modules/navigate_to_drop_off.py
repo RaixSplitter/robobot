@@ -14,7 +14,13 @@ class NavigateToDropOff(Task):
     def __init__(self):
         self.dont_move = 0.0
         self.drive_fast = 0.75
-
+        self.states = {
+            "Reset trip B": 0,
+            "Set goal heading/length": 1,
+            "Current aruco is not goal": 2,
+            "Current aruco is goal": 3
+        }
+        self.state = 0
         self.pose = None  # (x,y,z) x is left/right, y is up/down, z is inwards/outwards
         self.pose_distances = []
         self.aruco_poses = []
@@ -40,19 +46,19 @@ class NavigateToDropOff(Task):
         self.goal_ids = [14,15]
 
     def loop(self):
-        if not self.trip_has_reset:
+        if self.state == 0:
             pose.tripBreset()
             self.trip_has_reset = True
-            self.get_new_aruco_poses()
+            self.state = self.get_new_aruco_poses()
 
         # To orient yourself with the goal rotate until heading (h) is:
         # h = arctan(Z/X)
-        if self.goal_heading == None and self.length_to_pose == None:
+        if self.state == 1:
             self.goal_heading = np.arctan2(self.x, self.z)
             self.length_to_pose = np.sqrt(self.x**2+self.z**2)
         
         self.is_aruco_drop_off()
-        if not self.is_goal_aruco:
+        if self.state == 2:
             self.rotate_to_current_goal_heading()
             if self.length_to_pose >= self.distance_from_pose:
                 service.send(service.topicCmd + "ti/rc", "0.2 0.0") # drive straight # speed, angle
@@ -64,10 +70,7 @@ class NavigateToDropOff(Task):
                 if self.has_navigated_to_different_aruco:
                     self.get_new_aruco_poses()
 
-        if self.is_goal_aruco:
-            self.drive_straight_to_pose = True
-
-        if self.drive_straight_to_pose:
+        if self.state == 3:
             service.send(service.topicCmd + "ti/rc", "0.2 0.0") # drive straight # speed, angle
             if pose.tripB >= self.length_to_pose - self.distance_from_pose:
                 service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
@@ -94,6 +97,10 @@ class NavigateToDropOff(Task):
 
     def is_aruco_drop_off(self):
         self.is_goal_aruco = self.read_aruco in self.goal_ids
+        if self.is_goal_aruco:
+            self.state = self.states["Current aruco is goal"]
+        else:
+            self.state = self.states["Current aruco is not goal"]
         return self.is_goal_aruco
 
     def navigate_to_different_aruco(self):
@@ -101,7 +108,7 @@ class NavigateToDropOff(Task):
         if not self.has_turned_90:
             service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn right # speed, angle
             # 90 grader
-            if pose.tripBh >= -pi/2:
+            if abs(pose.tripBh) >= pi/2:
                 self.has_turned_90 = True
                 service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
                 # Reset trip to track later
@@ -140,3 +147,5 @@ class NavigateToDropOff(Task):
         self.x = self.pose[0]
         self.y = self.pose[1]
         self.z = self.pose[2]
+
+        return self.states["Set goal heading/length"]
