@@ -115,7 +115,7 @@ class NavigateToPose(Task):
 				self.distance_idx += 1
 				self.distance_from_pose = self.distances_from_pose[self.distance_idx]
 				self.goal_heading = self.length_to_pose = None
-				self.has_turned = rotate_to_goal_heading= False
+				self.has_turned = self.rotate_to_goal_heading= False
     
 			
 		return TaskState.EXECUTING
