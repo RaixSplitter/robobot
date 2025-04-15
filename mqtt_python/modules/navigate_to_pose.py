@@ -21,16 +21,15 @@ class NavigateToPose(Task):
 		super().__init__(name='Navigate')
 		self.dont_move = 0.0
 		self.drive_fast = 0.75
-
+		
 		self.x = None
 		self.y = None
 		self.z = None
 		self.goal_heading = None
 		self.length_to_pose = None
-		self.distances_from_pose = [0.8, 0.4, 0.16]
+		self.distances_from_pose = [0.8, 0.35, 0.11]
 		self.distance_from_pose = self.distances_from_pose[0] # meters
 		self.distance_idx = 0
-		
 		self.trip_has_reset = False
 		self.rotate_to_goal_heading = True
 		self.has_turned = False
@@ -38,7 +37,7 @@ class NavigateToPose(Task):
 	
 	def loop(self, detection_target: str = 'ball'):
 		if not self.trip_has_reset:
-			LOGGER.debug("Trip is being reset")
+			# LOGGER.debug("Trip is being reset")
 			pose.tripBreset()
 			self.trip_has_reset = True
 			ok, img, imgTime = cam.getImage()
@@ -64,6 +63,8 @@ class NavigateToPose(Task):
 			self.x = found_poses[0][0]
 			self.y = found_poses[0][1]
 			self.z = found_poses[0][2]
+   
+			return TaskState.EXECUTING
 			# print(f"Set goal pose: {self.pose}, x,y,z: {self.x, self.y, self.z}")
 		# To orient yourself with the ball rotate until heading (h) is:
 		# h = arctan(Z/X)
@@ -72,10 +73,16 @@ class NavigateToPose(Task):
 			LOGGER.debug("Recomputing heading and length to ball")
 			self.goal_heading = np.arctan2(self.x, self.z)
 			self.length_to_pose = np.sqrt(self.x**2+self.z**2)
+			self.has_turned = False
+			self.rotate_to_goal_heading = True
 			print("Heading to goal:", self.goal_heading, "Distance to goal:", self.length_to_pose)
+			pose.tripBreset()
+   
+			return TaskState.EXECUTING
 		
 		if self.rotate_to_goal_heading and not self.has_turned:
 			LOGGER.debug("Turning to ball position (hopefully)")
+			print("Jeg er her med dig", self.goal_heading)
 			if self.goal_heading < 0: #Turn Left
 				# Turn Left?
 				if -pose.tripBh <= self.goal_heading:
@@ -83,6 +90,7 @@ class NavigateToPose(Task):
 					self.has_turned = True
 					service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
 				else:
+					print("turning left")
 					service.send(service.topicCmd + "ti/rc", "0.0 0.1") # turn left # speed, angle
 
 			if self.goal_heading > 0: #Turn Right
@@ -92,14 +100,22 @@ class NavigateToPose(Task):
 					self.has_turned = True
 					service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
 				else:
+					print("turning right")
+        
 					service.send(service.topicCmd + "ti/rc", "0.0 -0.1") # turn right # speed, angle
 					
 			if self.has_turned:
 				print("Switching to driving straight")
 				self.drive_straight_to_pose = True
+    
+			return TaskState.EXECUTING
+    
+		
+    
+		
 
 		if self.drive_straight_to_pose:
-			LOGGER.debug("Driving to ball position")
+			# LOGGER.debug("Driving to ball position")
 			service.send(service.topicCmd + "ti/rc", "0.1 0.0") # drive straight # speed, angle
    
 
@@ -108,24 +124,29 @@ class NavigateToPose(Task):
 			
 			print(f"{pose.tripB:.2f}, {self.length_to_pose}, {self.distance_from_pose:.2f}, {self.distance_idx}/{len(self.distances_from_pose)-1}")
 			print(condition_last, condition_distance_threshhold, self.has_turned)
+			print(self.rotate_to_goal_heading, self.has_turned, self.rotate_to_goal_heading and not self.has_turned)
    
 			if condition_last and condition_distance_threshhold:
-				LOGGER.debug("Lowering arm to capture ball")
+				# LOGGER.debug("Lowering arm to capture ball")
+
+
 				service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
 				self.drive_straight_to_pose = False
-				service.send(service.topicCmd + "T0/servo", "1 100 200") # down position
+    
+				service.send(service.topicCmd + "T0/servo", "1 0 200") # down position
 				return TaskState.SUCCESS
    
 
 			if condition_distance_threshhold:
-				LOGGER.debug("Stopping")
+				# LOGGER.debug("Stopping")
 				service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
 
 				self.trip_has_reset = False
 				self.distance_idx += 1
 				self.distance_from_pose = self.distances_from_pose[self.distance_idx]
 				self.goal_heading = self.length_to_pose = None
-				self.has_turned = self.rotate_to_goal_heading= False
+    
+			return TaskState.EXECUTING
     
 			
 		return TaskState.EXECUTING
