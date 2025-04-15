@@ -104,8 +104,14 @@ class NavigateToPose(Task):
 	def drive_to_target(self):
 		pose.tripBreset()
 		
-		if self.target.dist - self.OFFSET <= - self.DISTMARGIN:
-			self.add_state(State.)
+		if self.target.dist - self.OFFSET <= -self.DISTMARGIN:
+			self.add_state(State.FORWARD)
+			return False
+		elif self.target.dist - self.OFFSET >= self.DISTMARGIN:
+			self.add_state(State.REVERSE)
+			return False
+		else:
+			return True
    
 
 	def turn_left(self):
