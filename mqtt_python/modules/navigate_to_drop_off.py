@@ -131,7 +131,7 @@ class NavigateToDropOff(Task):
         ok, img, imgTime = cam.getImage()
         self.aruco_poses = get_pose(img) # Use Aruco pose estimation function TODO
         for aruco_pose_key in self.aruco_poses.items():
-            aruco_pose = self.aruco_poses[aruco_pose_key]
+            aruco_pose = drop_point(self.aruco_poses[aruco_pose_key])
             distance = np.linalg.norm(aruco_pose)
             self.pose_distances.append((aruco_pose_key,distance))
         closest_id, _ = min(self.pose_distances, key=lambda x: x[1])
