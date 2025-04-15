@@ -24,6 +24,9 @@ OFFSET = 0.08
 
 
 ARUCO_DICT = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
+
+
+
 PARAMETERS = cv2.aruco.DetectorParameters()
 
 # Create the ArUco detector

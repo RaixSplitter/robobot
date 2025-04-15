@@ -39,8 +39,8 @@ class NavigateToPose(Task):
 				found_poses = [found_pose.flatten()]
 				print("LSMLKASDL", found_poses)
 
-			elif detection_target == 'ball':
-				found_poses = pose_est_ball_from_img(img)
+			elif detection_target == 'ball': # Blue
+				found_poses = pose_est_ball_from_img(img, Ball_Color = Ball_Color.BLUE)
 			else:
 				raise ValueError()
 
