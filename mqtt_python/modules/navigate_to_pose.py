@@ -20,7 +20,7 @@ class NavigateToPose(Task):
 		self.z = None
 		self.goal_heading = None
 		self.length_to_pose = None
-		self.distances_from_pose = [0.5, 0.4, 0.3, 0.2, 0.16]
+		self.distances_from_pose = [0.8, 0.4, 0.16]
 		self.distance_from_pose = self.distances_from_pose[0] # meters
 		self.distance_idx = 0
 		
@@ -31,7 +31,7 @@ class NavigateToPose(Task):
   
 	
 
-	def loop(self, detection_target: str = 'aruco'):
+	def loop(self, detection_target: str = 'ball'):
 		if not self.trip_has_reset:
 			pose.tripBreset()
 			self.trip_has_reset = True
@@ -92,15 +92,18 @@ class NavigateToPose(Task):
 
 		if self.drive_straight_to_pose:
 			service.send(service.topicCmd + "ti/rc", "0.1 0.0") # drive straight # speed, angle
-			print(f"{pose.tripB:.2f}, {self.length_to_pose}")
    
 
 			condition_last = self.distance_idx == len(self.distances_from_pose) - 1
 			condition_distance_threshhold = pose.tripB >= self.length_to_pose - self.distance_from_pose
+			
+			print(f"{pose.tripB:.2f}, {self.length_to_pose}, {self.distance_from_pose:.2f}, {self.distance_idx}/{len(self.distances_from_pose)-1}")
+			print(condition_last, condition_distance_threshhold, self.has_turned)
+   
 			if condition_last and condition_distance_threshhold:
 				service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
 				self.drive_straight_to_pose = False
-				service.send(service.topicCmd + "T0/servo", "1 230 200") # down position
+				service.send(service.topicCmd + "T0/servo", "1 100 200") # down position
 				return TaskState.SUCCESS
    
 
@@ -111,6 +114,8 @@ class NavigateToPose(Task):
 				self.trip_has_reset = False
 				self.distance_idx += 1
 				self.distance_from_pose = self.distances_from_pose[self.distance_idx]
+				self.goal_heading = self.length_to_pose = None
+				self.has_turned = rotate_to_goal_heading= False
     
 			
 		return TaskState.EXECUTING
