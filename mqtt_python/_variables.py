@@ -4,6 +4,7 @@ from modules.axe import Axe
 from modules.eight import Eight
 from modules.roundabout import Roundabout
 from modules.navigate_to_pose import NavigateToPose
+from modules.navigate_to_drop_off import NavigateToDropOff
 from modules.ball_detection import pose_est_ball_from_img
 from modules.seesaw import Seesaw
 from modules.deliver_golf_ball import DeliverGolfBall
@@ -31,7 +32,8 @@ class Task:
 	AXE        = Axe()
 	EIGHT      = Eight()
 	ROUNDABOUT = Roundabout()
-	NAVIGATE   = NavigateToPose()
+	NAVIGATE_TO_POSE   = NavigateToPose()
+	NAVIGATE_TO_DROP_OFF = NavigateToDropOff()
 	SEESAW     = Seesaw()
 	DELIVER_GOLF_BALL = DeliverGolfBall()
 
@@ -87,8 +89,8 @@ class uniques:
 		# minmax(1, 2) : (2.0, 0.0, 0.4)
 	}
 	delegate_task = {
-		(0,1): [Task.DELIVER_GOLF_BALL,],
-		(4,8): [Task.AXE,],
+		# (0,1): [Task.NAVIGATE_TO_POSE,Task.NAVIGATE_TO_DROP_OFF],
+		(4,8): [Task.AXE, Task.NAVIGATE_TO_POSE, Task.NAVIGATE_TO_DROP_OFF],
 		(5,100): [Task.EIGHT, Task.ROUNDABOUT],
 		(2,6): [Task.SEESAW,],
 	}
