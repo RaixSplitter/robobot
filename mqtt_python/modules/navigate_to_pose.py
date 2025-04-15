@@ -22,6 +22,8 @@ logging.basicConfig(
 LOGGER = logging.getLogger(__name__)
 
 
+MAX_TRAVEL_DISTANCE = 0.4
+
 class State(Enum):
 	LOOKING_FOR_OBJECT = 'LOOKING FOR OBJECT'
 	TARGET_TURN = 'TARGET TURN'
@@ -49,15 +51,17 @@ class Target:
 		self.x, self.y, self.z = x, y, z
 		self.angle = np.arctan2(x, z)
 		self.dist = np.sqrt(x**2 + z**2)
-		
-		
+
+		if self.dist > MAX_TRAVEL_DISTANCE: # If distance is too large, the robot should finetune iteratively
+			self.dist /= 2
+  
 class NavigateToPose(Task):
 	def __init__(self, target : PoseTarget = PoseTarget.BLUE_BALL):
 		super().__init__(name="Navigate")
 
 		self.SPEED = 0.1
 		self.TURNRATE = 0.1
-		self.ANGLEMARGIN = 0.1
+		self.ANGLEMARGIN = 0.05
 		self.DISTMARGIN = 0.01
 		self.OFFSET = 0.1 #Offset 11cm
   
