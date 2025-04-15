@@ -200,7 +200,7 @@ def pose_est_ball_from_img(image, Ball_Color = Ball_Color.BLUE):
     image = image[int(image.shape[0]*0.2):, :]
     
     # Detect balls in the image
-    detections = detect_balls(image, show=False, Ball_Color = Ball_Color)
+    detections = detect_balls(image, show=False, color = Ball_Color)
     if detections is None:
         return []
     
