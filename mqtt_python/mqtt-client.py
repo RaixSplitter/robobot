@@ -27,7 +27,7 @@ setproctitle("mqtt-client")
 params = default_params
 robo_map = master_map(
 	# path = [2,6,10,3], 
-	path = [2,6,10,3], 
+	path = [8], 
 	turn = { 0:None, 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT }, 
 	robot_param = params
 )
@@ -173,6 +173,7 @@ def loop():
 				print(f"Lost in task {current_task}")
 				state = State.END_PROGRAM
 			if len(task_list) == 0: # when all task are done
+				print("All task done")
 				state = State.FOLLOW_LINE
 
 		elif state == State.END_PROGRAM:

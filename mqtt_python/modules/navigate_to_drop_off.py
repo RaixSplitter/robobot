@@ -4,7 +4,7 @@ from sir import ir
 from sedge import edge
 from spose import pose
 from uservice import service
-from ball_detection import *
+from modules.ball_detection import *
 from modules.aruco import get_pose, drop_point
 from scam import cam
 from math import pi
