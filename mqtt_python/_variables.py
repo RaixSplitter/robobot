@@ -2,7 +2,7 @@ from enum import Enum
 from math import pi
 from modules.axe import Axe
 from modules.eight import Eight
-from modules.roundabout import Roundabout
+from modules.roundabout_s import Roundabout
 from modules.navigate_to_pose import NavigateToPose
 from modules.navigate_to_drop_off import NavigateToDropOff
 from modules.ball_detection import pose_est_ball_from_img
@@ -29,13 +29,13 @@ class State(Enum):
 
 ### TASK ###
 class Task:
-	AXE        = Axe()
-	EIGHT      = Eight()
-	ROUNDABOUT = Roundabout()
-	NAVIGATE_TO_POSE   = NavigateToPose()
+	AXE         		 = Axe()
+	EIGHT       		 = Eight()
+	ROUNDABOUT  		 = Roundabout()
+	NAVIGATE_TO_POSE   	 = NavigateToPose()
 	NAVIGATE_TO_DROP_OFF = NavigateToDropOff()
-	SEESAW     = Seesaw()
-	DELIVER_GOLF_BALL = DeliverGolfBall()
+	SEESAW     			 = Seesaw()
+	DELIVER_GOLF_BALL 	 = DeliverGolfBall()
 
 ### ROBOT VALUES ###
 # Default params, can and will be overwritten in `map.py`
@@ -89,7 +89,7 @@ class uniques:
 		# minmax(1, 2) : (2.0, 0.0, 0.4)
 	}
 	delegate_task = {
-		# (0,1): [Task.NAVIGATE_TO_POSE,Task.NAVIGATE_TO_DROP_OFF],
+		(0,1): [Task.ROUNDABOUT],
 		(4,8): [Task.AXE, Task.NAVIGATE_TO_POSE, Task.NAVIGATE_TO_DROP_OFF],
 		(5,100): [Task.EIGHT, Task.ROUNDABOUT],
 		(2,6): [Task.SEESAW,],

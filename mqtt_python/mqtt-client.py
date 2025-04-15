@@ -150,7 +150,7 @@ def loop():
 			# 	state = State.END_PROGRAM
 
 		elif state == State.SOLVING_TASK:
-			print("Doing task")
+			# print("Doing task")
 			task_list = params["task_list"]
 			if len(task_list) == 0:
 				print("Shouldnt happen you fucked up")

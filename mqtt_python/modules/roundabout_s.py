@@ -13,16 +13,26 @@ class Roundabout(Task):
         self.topicRc  = service.topicCmd + "ti/rc"
         # task/job
         # self.job = self.get_to_pos
-        self.job = self.do_a_roll
+        self.job = self.do_a_circle
         
         # variables
-        self.robot_speed = 0.2
-        self.turn_angle  = 0.2 # rad
+        self.robot_speed = 0.1
+        self.turn_angle  = 1.2 # rad
+        self.current_action = [f"{self.robot_speed} 0.0", f"0.0 {self.turn_angle}"]
         
-        self.circle_state = 0 # 0 = within range, 1 = out of range
+        self.is_turning  = False
+        self.set_tripbh  = 0
         
-        self.object_dist = (0.4, 0.5) # min/max
+        self.circle_state = 0 # 0 = pre detect, 1 = within range, 2 = out of range
+        
+        self.object_dist = (0.2, 0.4) # min/max
         self.drive_dist  = 5 # m?
+    
+    def debug(self):
+        service.send(service.topicCmd + "ti/rc", f"0.0 0.0") # drive straight # speed, angle
+        print("circle state:", self.circle_state, "ir distance:", ir.ir[0], "bh:", pose.tripBh)
+        input()
+        service.send(service.topicCmd + "ti/rc", self.current_action[0])
 
     def get_to_pos(self):
         
@@ -32,21 +42,44 @@ class Roundabout(Task):
             self.job = self.do_a_circle
 
     def do_a_circle(self):
-        if pose.tripB >= self.drive_dist:
+        if self.drive_dist <= 0:
             return TaskState.SUCCESS
+        
+        if self.is_turning:
+            if abs(pose.tripBh%(2*pi)-self.set_tripbh) >= self.turn_angle:
+                self.is_turning = False
+                self.drive_dist -= pose.tripB
+                # pose.tripBreset()
+                self.current_action = list(reversed(self.current_action))
+            return TaskState.EXECUTING
+            
+        service.send(service.topicCmd + "ti/rc", self.current_action[0]) # drive straight # speed, angle
         sensor_d = ir.ir[0]
         
         if self.circle_state == 0:
-            service.send(service.topicCmd + "ti/rc", f"{self.robot_speed} 0.0") # drive straight # speed, angle
-            if sensor_d > self.object_dist[0]: # within range
+            if sensor_d < self.object_dist[0]:
+                print("State 0")
                 self.circle_state = 1
+                self.debug()
         
         elif self.circle_state == 1:
-            service.send(service.topicCmd + "ti/rc", f"{self.robot_speed} 0.0") # drive straight # speed, angle
-            if sensor_d > self.object_dist[1]: # out of range
-                service.send(service.topicCmd + "ti/rc", f"0.1 {self.turn_angle}") # turning # speed, angle
+            if sensor_d >= self.object_dist[0] : # within range
+                print("State 1")
+                self.circle_state = 2
+                self.debug()
+        
+        elif self.circle_state == 2:
+            if sensor_d >= self.object_dist[1]: # out of range
+                print("State 2")
+                self.current_action = list(reversed(self.current_action))
+                service.send(service.topicCmd + "ti/rc", self.current_action[0]) # turning # speed, angle
+                self.is_turning = True
                 self.circle_state = 0
+                self.set_tripbh = pose.tripBh
+                self.debug()
+        
 
     def loop(self):
+        print("circle state:", self.circle_state, "ir distance:", ir.ir[0], "bh:", pose.tripBh)
         self.job()
         return TaskState.EXECUTING
