@@ -11,6 +11,7 @@ import time
 import logging
 from enum import Enum
 from dataclasses import dataclass
+import cv2
 
 logging.basicConfig(
 	filename="navigate_to_pose_log",
@@ -25,6 +26,10 @@ class State(Enum):
 	INIT = 'INITIALIZE SEQUENCE'
 	LOWER_ARM = 'LOWER ARM'
 	WAIT = 'WAIT FOR CAR'
+	INTOPOS = 'INTO POSITION'
+	ROTATION = 'Rotation'
+	JANK_PREPARE = 'JANK PREP'
+	JANK = 'JANKING'
 
 
 class RetrieveLuggage(Task):
@@ -32,18 +37,27 @@ class RetrieveLuggage(Task):
 		super().__init__(name="Navigate")
 		#region CONFIG
 		self.SPEED = 0.1
-		self.DEFAULT_STATE = State.INIT
-		self.DIST_TO_WALL = 0.05 #[M]
+		self.TURNRATE = 0.3
+  
+		self.DEFAULT_STATE = State.WAIT
+		self.DIST_TO_WALL = 0.12 #[M]
+		self.ROTATION = np.pi * 1/4
 		#endregion
   
 		#region States
 		self.states_q : list[State] = []
-		self.state: State = State.WAIT
+		self.state: State = State.INIT
 		self.finish = False
 		self.actions = {
-			State.INIT 			: self.get_into_position,
+			State.INIT 			: self.initialize,
+			State.INTOPOS 		: self.get_into_position,
 			State.LOWER_ARM 	: self.lower_arm,
 			State.WAIT 			: self.wait,
+			State.ROTATION 		: self.rotate,
+			State.JANK_PREPARE 	: self.jank_prepare,
+			State.JANK 			: self.jank,
+   
+
 		}
 		#endregion
 
@@ -77,6 +91,21 @@ class RetrieveLuggage(Task):
 			service.send(service.topicCmd + "ti/rc", f"{-self.SPEED} 0.0")
 		else: #Forward
 			service.send(service.topicCmd + "ti/rc", f"{self.SPEED} 0.0")
+	def turn(self, left : bool = False):
+		"""
+		Turns the robot either left or right
+
+		ARGS:
+			left : bool, if False turns left, if True turns right.
+		RETURN:
+			None
+  		"""
+		if left: #Turns left
+			service.send(service.topicCmd + "ti/rc", f"0.0 {self.TURNRATE}")
+	  
+	  
+		else: # Turns right
+			service.send(service.topicCmd + "ti/rc", f"0.0 {-self.TURNRATE}")
 
 
 	def loop(self, detection_target: str = "ball"):
@@ -91,23 +120,77 @@ class RetrieveLuggage(Task):
 			return TaskState.FAILURE
 		return TaskState.EXECUTING
 	#endregion
+ 
+	def initialize(self):
+		self.add_state(State.INTOPOS)
+		self.change_state()
+		return
+		
 
 	def get_into_position(self):
-		service.send(service.topicCmd + "T0/servo", "1, 0 1") # Up position
-		
 		distance = ir.ir[1] #IR distance to object in front
+  
+		print(distance, self.DIST_TO_WALL)
 		
 		if distance > self.DIST_TO_WALL:
 			self.drive()
 			return
-		else:
+
+		pose.tripBreset()
+
+		self.stop()
+		self.add_state(State.LOWER_ARM)
+		self.change_state()
+		return
+
+	def rotate(self):
+		if abs(pose.tripBh) >= abs(self.ROTATION):
 			self.stop()
 			self.add_state(State.WAIT)
+			self.change_state()
 			return
-			
+		else:
+			self.turn(left = False)
+			return
 
-	def get_into_position(self):
+	def lower_arm(self):
+		service.send(service.topicCmd + "T0/servo", "1 -650 200")
+		self.add_state(State.JANK_PREPARE)
+		self.change_state()
+		return
+
+	def jank_prepare(self):
+		ok, img, imgstate = cam.getImage()
+  
+		if ok:
+			poses = get_pose(img, "captured_image.jpg")
+			print(poses,ir.ir[1])
+   
+			car_pose = poses.get('car', None)
+			if car_pose:
+				rvec, tvec, identifier = car_pose
+				print("SWAPPING STATES")
+				self.add_state(State.JANK)
+				self.change_state()
+				pose.tripBreset()
+				return
+
+	def jank(self):
+		if abs(pose.tripB) >= 0.3:
+			self.stop()
+		else:
+			self.drive(reverse=True)
+	 
+			
+			
+			
+		
+
+	def wait(self):
+		ok, img, imgstate = cam.getImage()
+  
+		if ok:
+			pose = get_pose(img, "captured_image.jpg")
 		self.stop()
-		pass
 
 

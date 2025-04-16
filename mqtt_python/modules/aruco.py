@@ -62,12 +62,18 @@ def get_pose(img, save_path=None):
     corners, ids, rejected = DETECTOR.detectMarkers(
         cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     )
+    
+    if corners is None or ids is None:
+        if save_path:
+            cv2.imwrite(save_path, img)
+        return {}
 
     poses = {}
 
     for _id, _corners in zip(ids, corners):
         
-        identifier, _marker_size = ARUCO_MAP.get(_id, (None, None))
+        identifier, _marker_size = ARUCO_MAP.get(str(_id[0]), (None, None))
+        print(_id, identifier, _marker_size)
         assert identifier
         assert _marker_size
         
@@ -75,7 +81,7 @@ def get_pose(img, save_path=None):
         
         ret, rvec, tvec = cv2.solvePnP(_marker_points, _corners, MTX, DIST)
         if ret:
-            poses[_id[0]] = (rvec, tvec)
+            poses[identifier] = (rvec, tvec, identifier)
 
         if save_path:
             img_plot = cv2.drawFrameAxes(img, MTX, DIST, rvec, tvec, _marker_size)

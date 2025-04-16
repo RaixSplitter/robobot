@@ -1,20 +1,3 @@
-2025-04-16 14:14:29,924 modules.navigate_to_pose DEBUG State: State.TURN_RIGHT, State Queue: []
-2025-04-16 14:14:29,924 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=np.float64(0.08609475498412825), y=np.float64(-0.2627608511819502), z=np.float64(0.8514205215520787), angle=np.float64(0.10077640738633292), dist=np.float64(0.42788117841165635))
-2025-04-16 14:14:31,335 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
-2025-04-16 14:14:31,336 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=np.float64(0.08609475498412825), y=np.float64(-0.2627608511819502), z=np.float64(0.8514205215520787), angle=np.float64(0.10077640738633292), dist=np.float64(0.42788117841165635))
-2025-04-16 14:14:31,695 modules.navigate_to_pose DEBUG State: State.FORWARD, State Queue: []
-2025-04-16 14:14:31,695 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=np.float64(0.00881171304056557), y=np.float64(-0.24691316151341486), z=np.float64(0.8041193814658522), angle=np.float64(0.010957776367910099), dist=np.float64(0.4020838301696967))
-2025-04-16 14:14:34,209 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
-2025-04-16 14:14:34,210 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=np.float64(0.00881171304056557), y=np.float64(-0.24691316151341486), z=np.float64(0.8041193814658522), angle=np.float64(0.010957776367910099), dist=np.float64(0.4020838301696967))
-2025-04-16 14:14:34,696 modules.navigate_to_pose DEBUG State: State.FORWARD, State Queue: []
-2025-04-16 14:14:34,697 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=np.float64(0.001707808693710345), y=np.float64(-0.13961148228484768), z=np.float64(0.5360795876439014), angle=np.float64(0.003185726439947512), dist=np.float64(0.26804115397592854))
-2025-04-16 14:14:35,853 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
-2025-04-16 14:14:35,853 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=np.float64(0.001707808693710345), y=np.float64(-0.13961148228484768), z=np.float64(0.5360795876439014), angle=np.float64(0.003185726439947512), dist=np.float64(0.26804115397592854))
-2025-04-16 14:14:36,313 modules.navigate_to_pose DEBUG State: State.FORWARD, State Queue: []
-2025-04-16 14:14:36,314 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=np.float64(-0.003182547579137726), y=np.float64(-0.09098781107277293), z=np.float64(0.4135471104681525), angle=np.float64(-0.007695579712144955), dist=np.float64(0.2067796781514396))
-2025-04-16 14:14:36,874 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
-2025-04-16 14:14:36,875 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=np.float64(-0.003182547579137726), y=np.float64(-0.09098781107277293), z=np.float64(0.4135471104681525), angle=np.float64(-0.007695579712144955), dist=np.float64(0.2067796781514396))
-2025-04-16 14:14:37,320 modules.navigate_to_pose DEBUG State: State.FORWARD, State Queue: []
-2025-04-16 14:14:37,320 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=np.float64(-0.0026521229826147715), y=np.float64(-0.06511005072650791), z=np.float64(0.34462259205679374), angle=np.float64(-0.007695579712144955), dist=np.float64(0.344632796919066))
-2025-04-16 14:14:39,232 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
-2025-04-16 14:14:39,232 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=np.float64(-0.0026521229826147715), y=np.float64(-0.06511005072650791), z=np.float64(0.34462259205679374), angle=np.float64(-0.007695579712144955), dist=np.float64(0.344632796919066))
+2025-04-16 17:17:22,361 modules.luggage DEBUG State: State.INTOPOS, State Queue: []
+2025-04-16 17:17:26,914 modules.luggage DEBUG State: State.LOWER_ARM, State Queue: []
+2025-04-16 17:17:26,964 modules.luggage DEBUG State: State.JANK_PREPARE, State Queue: []
