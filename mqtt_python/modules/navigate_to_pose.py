@@ -195,7 +195,7 @@ class NavigateToPose(Task):
   
 		# Get pose
 		if self.target.type == PoseTarget.BLUE_BALL:
-			poses = pose_est_ball_from_img(img, Ball_Color=Ball_Color.RED)
+			poses = pose_est_ball_from_img(img, Ball_Color=Ball_Color.ORANGE)
 		if len(poses) == 0: #If no poses turn
 			self.turn()
 			return
@@ -215,7 +215,7 @@ class NavigateToPose(Task):
 		
 		#endregion
 
-		# self.state = State.CAPTURE
+		self.state = State.CAPTURE
 		return		
 
 	def loop(self, detection_target: str = "ball"):
