@@ -154,7 +154,7 @@ def detect_balls(image : np.ndarray, color : Ball_Color = Ball_Color.BLUE, show 
         param1=50,
         param2=25,  # The smaller it is, the more false circles may be detected. Circles, corresponding to the larger accumulator values, will be returned first.
         minRadius=5,
-        maxRadius=50,
+        maxRadius=100,
     )
 
     circles_filtered = None
