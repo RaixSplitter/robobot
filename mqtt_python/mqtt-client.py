@@ -64,7 +64,7 @@ def loop():
 		
 	# put servo down
 	# service.send(service.topicCmd + "T0/servo", "1 -900 200")
-	service.send(service.topicCmd + "T0/svos", "1 -900 200")
+	service.send(service.topicCmd + "T0/svos", "1 -899 200")
 	# main state machine
 	edge.set_line_control_targets(0, 0)
 	while not (service.stop or gpio.stop()):
