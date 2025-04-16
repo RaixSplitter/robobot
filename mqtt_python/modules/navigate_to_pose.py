@@ -54,6 +54,7 @@ class Target:
 
 		if self.dist > MAX_TRAVEL_DISTANCE: # If distance is too large, the robot should finetune iteratively
 			self.dist /= 2
+		print(f"Target Distance Set to {self.dist}")
   
 class NavigateToPose(Task):
 	def __init__(self, target : PoseTarget = PoseTarget.BLUE_BALL):
@@ -63,11 +64,12 @@ class NavigateToPose(Task):
 		self.TURNRATE = 0.1
 		self.ANGLEMARGIN = 0.05
 		self.DISTMARGIN = 0.01
-		self.OFFSET = 0.1 #Offset 11cm
+		self.OFFSET = 0.16 #Offset 11cm
   
 		self.states_q : list[State] = []
 		self.state: State = State.LOOKING_FOR_OBJECT
 		self.target = Target(target)
+		self.finish = False
 		self.actions = {
 			State.LOOKING_FOR_OBJECT 	: self.get_pose,
 			State.TARGET_TURN 			: self.turn_to_target,
@@ -79,14 +81,15 @@ class NavigateToPose(Task):
 		}
   
 	def change_state(self) -> None:
-		LOGGER.debug(f"State: {self.state}, State Queue: {self.states_q}")
-		LOGGER.debug(f"Target: {self.target}")
+		
 		
   
 		if self.states_q: #Get next state
 			self.state = self.states_q.pop(0)
 		else: #Default state
 			self.state = State.LOOKING_FOR_OBJECT
+		LOGGER.debug(f"State: {self.state}, State Queue: {self.states_q}")
+		LOGGER.debug(f"Target: {self.target}")
 	
 	def add_state(self, state) -> None:
 		self.states_q.append(state)
@@ -180,18 +183,24 @@ class NavigateToPose(Task):
 	
 	def reverse(self):
 		#Calculate missing distance
-		if pose.tripB <= self.target.dist + self.OFFSET:
+		condition = abs(pose.tripB) >= abs(self.OFFSET - self.target.dist)
+		print(condition, pose.tripB, self.target.dist, self.OFFSET)
+		if condition:
 			self.stop()
 			self.change_state()
 		else:
-			self.drive()
+			self.drive(reverse = True)
 	
 	def capture(self):
-		service.send(service.topicCmd + "T0/servo", "1, 0 200") # Down position
-		return TaskState.SUCCESS
+		service.send(service.topicCmd + "T0/servo", "1, 0 1") # Up position
+		self.finish = True
+		return 
 	
 	def get_pose(self) -> bool:
+     
 		ok, img, imgTime = cam.getImage() # Get image
+		service.send(service.topicCmd + "T0/servo", "1 -901 200")
+
   
 		# Get pose
 		if self.target.type == PoseTarget.BLUE_BALL:
@@ -221,8 +230,12 @@ class NavigateToPose(Task):
 	def loop(self, detection_target: str = "ball"):
 		action = self.actions[self.state]
 		error = action()
+  
+		if self.finish:
+			return TaskState.SUCCESS
 
 		if error:
+			LOGGER.error(f"Failed to execute state action: {self.state} for action {action}")
 			return TaskState.FAILURE
 	  
 		return TaskState.EXECUTING

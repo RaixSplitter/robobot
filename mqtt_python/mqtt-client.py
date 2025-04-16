@@ -63,8 +63,11 @@ def loop():
 		service.send(service.topicCmd + "T0/leds","16 30 30 0") # LED 16: yellow - waiting
 		
 	# put servo down
-	# service.send(service.topicCmd + "T0/servo", "1 -900 200")
-	service.send(service.topicCmd + "T0/svos", "1 -900 200")
+	service.send(service.topicCmd + "T0/servo", "1 -900 200")
+	# service.send(service.topicCmd + "T0/svos", "1 -900 200")
+	# service.send(service.topicCmd + "T0/servo", "1, -900 200") # Down position
+ 
+ 
 	# main state machine
 	edge.set_line_control_targets(0, 0)
 	while not (service.stop or gpio.stop()):
