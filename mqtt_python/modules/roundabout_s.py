@@ -69,7 +69,7 @@ class Roundabout(Task):
             return TaskState.SUCCESS
         
         if self.is_turning:
-            if (time() - self.set_turn_time) >= self.turn_angle:
+            if (time() - self.set_turn_time) >= self.turn_time:
                 self.is_turning = False
                 self.current_action = list(reversed(self.current_action))
             return TaskState.EXECUTING
