@@ -121,7 +121,7 @@ def detect_balls(image : np.ndarray, color : Ball_Color = Ball_Color.BLUE, show 
     # n_balls = 6
     
     assert isinstance(color, Ball_Color), "Color must be of type Ball_Color"
-
+    
     # Only grab blue ball
     if color == Ball_Color.BLUE:
         mask = get_blue_mask(hsv_image)

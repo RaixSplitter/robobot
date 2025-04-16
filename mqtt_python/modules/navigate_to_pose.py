@@ -205,7 +205,10 @@ class NavigateToPose(Task):
 		# Get pose
 		if self.target.type == PoseTarget.BLUE_BALL:
 			poses = pose_est_ball_from_img(img, Ball_Color=Ball_Color.ORANGE)
-		if len(poses) == 0: #If no poses turn
+		if self.target.type == PoseTarget.ARUCO:
+			raise NotImplementedError("Aruco LOGIC has not been implemented")
+			
+		if not poses: #If no poses turn
 			self.turn()
 			return
 		

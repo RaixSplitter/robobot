@@ -10,28 +10,52 @@ DIST = np.load(DIST_PATH)
 
 MARKER_SIZE = 0.035
 
-MARKER_POINTS = np.array(
-    [
-        [-MARKER_SIZE / 2, MARKER_SIZE / 2, 0],
-        [MARKER_SIZE / 2, MARKER_SIZE / 2, 0],
-        [MARKER_SIZE / 2, -MARKER_SIZE / 2, 0],
-        [-MARKER_SIZE / 2, -MARKER_SIZE / 2, 0],
-    ],
-    dtype=np.float32,
-)
 
 OFFSET = 0.08
 
 
 ARUCO_DICT = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
-
+ARUCO_MAP = {
+    # Sorting Center, MARKERSIZE 10 CM, 0.1 M
+    "10": ("A", 0.1),
+    "11": ("A", 0.1),
+    "12": ("B", 0.1),
+    "13": ("B", 0.1),
+    "14": ("C", 0.1),
+    "15": ("C", 0.1),
+    "16": ("D", 0.1),
+    "17": ("D", 0.1),
+    # Luggage, MARKERSIZE 4 CM, 0.04 M
+    "5": ("car", 0.035),  # 0.35
+    "20": ("LA", 0.04),
+    "53": ("LD", 0.04),
+    # EXIT
+    "25": ("EXIT", 0.1),
+    # EXTRA
+    "18": ("extra1", 0.1),
+    "19": ("extra2", 0.1),
+}
 
 
 PARAMETERS = cv2.aruco.DetectorParameters()
 
 # Create the ArUco detector
 DETECTOR = cv2.aruco.ArucoDetector(ARUCO_DICT, PARAMETERS)
+
+
 # plt.figure(figsize=(10, 10))
+def get_marker_points(marker_size) -> np.array:
+    marker_points = np.array(
+        [
+            [-marker_size / 2, marker_size / 2, 0],
+            [marker_size / 2, marker_size / 2, 0],
+            [marker_size / 2, -marker_size / 2, 0],
+            [-marker_size / 2, -marker_size / 2, 0],
+        ],
+        dtype=np.float32,
+    )
+    
+    return marker_points
 
 
 def get_pose(img, save_path=None):
@@ -40,32 +64,38 @@ def get_pose(img, save_path=None):
     )
 
     poses = {}
-    rvecs, tvecs = [], []
 
     for _id, _corners in zip(ids, corners):
-        ret, rvec, tvec = cv2.solvePnP(MARKER_POINTS, _corners, MTX, DIST)
+        
+        identifier, _marker_size = ARUCO_MAP.get(_id, (None, None))
+        assert identifier
+        assert _marker_size
+        
+        _marker_points = get_marker_points(_marker_size)
+        
+        ret, rvec, tvec = cv2.solvePnP(_marker_points, _corners, MTX, DIST)
         if ret:
             poses[_id[0]] = (rvec, tvec)
 
         if save_path:
-            img_plot = cv2.drawFrameAxes(img, MTX, DIST, rvec, tvec, MARKER_SIZE)
+            img_plot = cv2.drawFrameAxes(img, MTX, DIST, rvec, tvec, _marker_size)
 
     if save_path:
         cv2.imwrite(save_path, img_plot)
 
     return poses
 
+
 def drop_point(rvec, tvec):
     offset_vector = np.dot(cv2.Rodrigues(rvec)[0], np.array([0, 0, OFFSET]))
     position = tvec.flatten() + offset_vector
-    
+
     return position
-    
 
 
 # if __name__ == "__main__":
 #     DIR_PATH = "C:/programmering/DTU/robobot/data/aruco"
-    
+
 #     files = os.listdir(DIR_PATH)
 
 
