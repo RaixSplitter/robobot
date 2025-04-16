@@ -91,7 +91,7 @@ class uniques:
 		# minmax(1, 2) : (2.0, 0.0, 0.4)
 	}
 	delegate_task = {
-		(0,1): [Task.NAVIGATE_TO_POSE,Task.NAVIGATE_TO_DROP_OFF],
+		(0,1): [Task.RETRIEVE_LUGGAGE,Task.NAVIGATE_TO_DROP_OFF],
 		(4,8): [Task.AXE, Task.NAVIGATE_TO_POSE, Task.NAVIGATE_TO_DROP_OFF],
 		(5,100): [Task.EIGHT, Task.ROUNDABOUT],
 		(2,6): [Task.SEESAW,],

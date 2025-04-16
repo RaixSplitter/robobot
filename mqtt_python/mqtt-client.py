@@ -35,7 +35,7 @@ robo_map = master_map(
 
 def loop(): 
 	state = State.START
-	# state = State.TESTING
+	#state = State.TESTING
 	prev_state = None
 	n_frames = 0
 	n_frames_lost = 0
@@ -153,7 +153,6 @@ def loop():
 			# 	state = State.END_PROGRAM
 
 		elif state == State.SOLVING_TASK:
-			# print("Doing task")
 			task_list = params["task_list"]
 			if len(task_list) == 0:
 				print("Shouldnt happen you fucked up")
@@ -187,8 +186,9 @@ def loop():
 
 		# NOTE: This state is the catch all for any misc testing code
 		elif state == State.TESTING:
-			params['current_task'] = Task.RETRIEVE_LUGGAGE
-			state = State.SOLVING_TASK
+			print("Kartoffelmel")
+			#params['current_task'] = Task.RETRIEVE_LUGGAGE
+			#state = State.SOLVING_TASK
 			# service.send(service.topicCmd + "T0/servo", "1 -900 0.8")
 
 			# current_task = Task.NAVIGATE
