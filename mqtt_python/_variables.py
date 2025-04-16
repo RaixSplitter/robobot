@@ -5,6 +5,7 @@ from modules.eight import Eight
 from modules.roundabout_s import Roundabout
 from modules.navigate_to_pose import NavigateToPose
 from modules.navigate_to_drop_off import NavigateToDropOff
+from modules.luggage import RetrieveLuggage
 from modules.ball_detection import pose_est_ball_from_img
 from modules.seesaw import Seesaw
 from modules.deliver_golf_ball import DeliverGolfBall
@@ -36,6 +37,7 @@ class Task:
 	NAVIGATE_TO_DROP_OFF = NavigateToDropOff()
 	SEESAW     			 = Seesaw()
 	DELIVER_GOLF_BALL 	 = DeliverGolfBall()
+	RETRIEVE_LUGGAGE = RetrieveLuggage()
 
 ### ROBOT VALUES ###
 # Default params, can and will be overwritten in `map.py`

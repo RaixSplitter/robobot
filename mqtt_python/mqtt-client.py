@@ -184,7 +184,7 @@ def loop():
 
 		# NOTE: This state is the catch all for any misc testing code
 		elif state == State.TESTING:
-			params['current_task'] = Task.EIGHT
+			params['current_task'] = Task.RETRIEVE_LUGGAGE
 			state = State.SOLVING_TASK
 			# service.send(service.topicCmd + "T0/servo", "1 -900 0.8")
 
