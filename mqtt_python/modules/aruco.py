@@ -72,7 +72,7 @@ def get_pose(img, save_path=None) -> dict:
 
 	for _id, _corners in zip(ids, corners):
 		
-		identifier, _marker_size = ARUCO_MAP.get(_id[0], (None, None, None))
+		identifier, _marker_size = ARUCO_MAP.get(_id[0], (None, None))
 		print(_id, identifier, _marker_size)
 		# assert identifier
 		# assert _marker_size
