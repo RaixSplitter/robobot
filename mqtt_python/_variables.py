@@ -5,6 +5,8 @@ from modules.eight import Eight
 from modules.roundabout_s import Roundabout
 from modules.navigate_to_pose import NavigateToPose
 from modules.navigate_to_drop_off import NavigateToDropOff
+from modules.roundabout import Roundabout
+from modules.navigate_to_pose import NavigateToPose, PoseTarget
 from modules.luggage import RetrieveLuggage
 from modules.ball_detection import pose_est_ball_from_img
 from modules.seesaw import Seesaw

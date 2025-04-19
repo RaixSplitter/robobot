@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from modules.navigate_to_pose import PoseTarget
 
 logging.basicConfig(
-	filename="navigate_to_pose_log",
+	filename=f"logs/{__name__}.log",
 	filemode="w",
 	format="%(asctime)s,%(msecs)03d %(name)s %(levelname)s %(message)s",
 	datefmt="%Y-%m-%d %H:%M:%S",
@@ -22,17 +22,24 @@ logging.basicConfig(
 )
 LOGGER = logging.getLogger(__name__)
 
+# Add handler to print to stdout
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+console_handler.setFormatter(logging.Formatter("%(asctime)s %(name)s %(levelname)s %(message)s", "%Y-%m-%d %H:%M:%S"))
+LOGGER.addHandler(console_handler)
 
-MAX_TRAVEL_DISTANCE = 0.4
+
+MAX_TRAVEL_DISTANCE = 1
 
 class State(Enum):
-	LOOKING_FOR_OBJECT = 'LOOKING FOR OBJECT'
-	TARGET_TURN = 'TARGET TURN'
-	TURN_LEFT = 'TURN LEFT'
-	TURN_RIGHT = 'TURN RIGHT'
-	FORWARD = 'FORWARD'
-	REVERSE = 'REVERSE'
-	CAPTURE = 'CAPTURE'
+	VERIFY_POSITION 		    = 'VERIFY_POSITION'
+	NAVIGATE_TO_CORNER 			= 'NAVIGATE_TO_CORNER'
+	TARGET_TURN 			    = 'TARGET TURN'
+	TURN_LEFT 			    	= 'TURN LEFT'
+	TURN_RIGHT			    	= 'TURN RIGHT'
+	FORWARD 				    = 'FORWARD SOLDIER'
+	REVERSE				    	= 'MOONWALKING'
+	DELIVER 				    = 'PIZZADELIVERY'
 
 @dataclass
 class Target:
@@ -54,7 +61,7 @@ class Target:
 		print(f"Target Distance Set to {self.dist}")
   
 class NavigateToDropOff(Task):
-	def __init__(self, target : PoseTarget = PoseTarget.BLUE_BALL):
+	def __init__(self, target : PoseTarget = PoseTarget.A):
 		super().__init__(name="Navigate")
 
 		self.SPEED = 0.1
@@ -62,17 +69,15 @@ class NavigateToDropOff(Task):
 		self.ANGLEMARGIN = 0.05
 		self.DISTMARGIN = 0.01
 		self.OFFSET = 0.0 #Offset 11cm
-		
-  
+
 		self.states_q : list[State] = []
-		self.state: State = State.LOOKING_FOR_BALLCENTER
-		self.default_state : State = State.LOOKING_FOR_BALLCENTER
+		self.state: State = State.VERIFY_POSITION
+		self.default_state : State = State.VERIFY_POSITION
 		self.target = Target(target)
 		self.finish = False
 		self.actions = {
-			State.LOOKING_FOR_BALLCENTER 	: self.looking_for_ballcenter,
 			State.VERIFY_POSITION 		    : self.verify_position,
-			State.NAVIGATE_TO_NEXT_CORNER 	: self.navigate_to_next_corner,
+			State.NAVIGATE_TO_CORNER 		: self.navigate_to_corner
 			State.TARGET_TURN 			    : self.turn_to_target,
 			State.TURN_LEFT 			    : self.turn_left,
 			State.TURN_RIGHT			    : self.turn_right,
@@ -100,7 +105,7 @@ class NavigateToDropOff(Task):
 		else: #Default state
 			self.state = self.default_state
 		LOGGER.debug(f"State: {self.state}, State Queue: {self.states_q}")
-		LOGGER.debug(f"Target: {self.target}")
+		# LOGGER.debug(f"Target: {self.target}")
 	
 	def add_state(self, state) -> None:
 		self.states_q.append(state)
@@ -201,9 +206,12 @@ class NavigateToDropOff(Task):
 	
 	def deliver(self):
 		service.send(service.topicCmd + "T0/servo", "1, -900 1") # Up position
-		self.finish = True
+		# self.finish = True
 		return 
 		#endregion
+  
+	def navigate_to_corner(self):
+		pass
 
 	def verify_position(self):
 		ok, img, imgTime = cam.getImage() # Get image
@@ -212,27 +220,31 @@ class NavigateToDropOff(Task):
 		# Get pose
 		poses = get_pose(img, "captured_image.jpg")
 		# Filter poses to only include keys 'A', 'B', 'C', and 'D'
-		poses = {key: value for key, value in poses.items() if ARUCO_MAP[key] in {'A', 'B', 'C', 'D'}}
-  
+		poses = {key: value for key, value in poses.items() if ARUCO_MAP[key][0] in {'A', 'B', 'C', 'D'}}
+		print(poses, self.target.type.value)
 		for key, value in poses.items():
-			if ARUCO_MAP[key] == self.target.type: #If target found
+			if ARUCO_MAP[key][0] == self.target.type: #If target found
 				rvec, tvec, identifier = value
-				drop_pos = drop_point(rvec, tvec, delivery=True, offset=0.8)
+				drop_pos = drop_point(rvec, tvec, delivery=True, offset=0.8, show = True, img = img)
 				self.target.set_pose(drop_pos)
+				self.add_state(State.NAVIGATE_TO_CORNER)
+				LOGGER.info('FOUND TARGET')
 		else: #If no target found
 			if not poses: #If no poses turn
 				self.turn()
 				return
 			elif len(poses) == 1:
-				rvec, tvec, identifier = poses.values()[0]
-				drop_pos = drop_point(rvec, tvec, delivery=False, offset=0.2)
+				rvec, tvec, identifier = list(poses.values())[0]
+				drop_pos = drop_point(rvec, tvec, delivery=False, offset=0.3, show = True, img = img)
 				self.target.set_pose(drop_pos)
+				LOGGER.info('NO TARGET FOUND GOING TO NEXT CORNER', identifier)
 			else: #If multiple poses, get the pose with the rightmost translation vector
 				# Get the pose with the largest x value
 				target_pose = max(poses.values(), key=lambda x: x[1][0][0])
 				rvec, tvec, identifier = target_pose
-				drop_pos = drop_point(rvec, tvec, delivery=True, offset=self.OFFSET)
+				drop_pos = drop_point(rvec, tvec, delivery=False, offset=0.3, show = True, img = img)
 				self.target.set_pose(drop_pos)
+				LOGGER.info('NO TARGET FOUND GOING TO NEXT CORNER M2', identifier)
 
 		#region Validation constraints
 		# VALIDATION STEP 1 TURN

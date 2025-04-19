@@ -42,9 +42,9 @@ class RetrieveLuggage(Task):
 		self.DEFAULT_STATE = State.WAIT
 		self.DIST_TO_WALL = 0.12 #[M]
 		self.ROTATION = np.pi * 1/4
-		self.ORANGE_MIN = np.array([0,71,0])
-		self.ORANGE_MAX = np.array([42, 109, 255])
-		self.ORANGE_THRESHHOLD = 13
+		self.ORANGE_MIN = np.array([3,184,120])
+		self.ORANGE_MAX = np.array([29,255,255])
+		self.ORANGE_THRESHHOLD = 50
 		self.last_car_pose = 0
 		#endregion
   
