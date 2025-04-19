@@ -5,7 +5,7 @@ from sedge import edge
 from spose import pose
 from uservice import service
 from modules.ball_detection import *
-from modules.aruco import get_pose
+from modules.aruco import get_pose, drop_point, ARUCO_MAP
 from scam import cam
 import time
 import logging
@@ -61,7 +61,7 @@ class NavigateToDropOff(Task):
 		self.TURNRATE = 0.1
 		self.ANGLEMARGIN = 0.05
 		self.DISTMARGIN = 0.01
-		self.OFFSET = 0.16 #Offset 11cm
+		self.OFFSET = 0.0 #Offset 11cm
 		
   
 		self.states_q : list[State] = []
@@ -203,29 +203,36 @@ class NavigateToDropOff(Task):
 		service.send(service.topicCmd + "T0/servo", "1, -900 1") # Up position
 		self.finish = True
 		return 
-	#endregion
-	
-	def looking_for_ballcenter(self):
-		pass
+		#endregion
 
 	def verify_position(self):
 		ok, img, imgTime = cam.getImage() # Get image
 		service.send(service.topicCmd + "T0/servo", "1 -901 200")
 
-  
 		# Get pose
-		if self.target.type == PoseTarget.BLUE_BALL:
-			poses = pose_est_ball_from_img(img, Ball_Color=Ball_Color.ORANGE)
-		if self.target.type == PoseTarget.ARUCO:
-			poses = get_pose(img, "captured_image.jpg")
-			# Filter poses to only include keys 'A', 'B', 'C', and 'D'
-			poses = {key: value for key, value in poses.items() if key in {'A', 'B', 'C', 'D'}}
-			
-		if not poses: #If no poses turn
-			self.turn()
-			return
-		
-		self.target.set_pose(poses[0]) #Set target
+		poses = get_pose(img, "captured_image.jpg")
+		# Filter poses to only include keys 'A', 'B', 'C', and 'D'
+		poses = {key: value for key, value in poses.items() if ARUCO_MAP[key] in {'A', 'B', 'C', 'D'}}
+  
+		for key, value in poses.items():
+			if ARUCO_MAP[key] == self.target.type: #If target found
+				rvec, tvec, identifier = value
+				drop_pos = drop_point(rvec, tvec, delivery=True, offset=0.8)
+				self.target.set_pose(drop_pos)
+		else: #If no target found
+			if not poses: #If no poses turn
+				self.turn()
+				return
+			elif len(poses) == 1:
+				rvec, tvec, identifier = poses.values()[0]
+				drop_pos = drop_point(rvec, tvec, delivery=False, offset=0.2)
+				self.target.set_pose(drop_pos)
+			else: #If multiple poses, get the pose with the rightmost translation vector
+				# Get the pose with the largest x value
+				target_pose = max(poses.values(), key=lambda x: x[1][0][0])
+				rvec, tvec, identifier = target_pose
+				drop_pos = drop_point(rvec, tvec, delivery=True, offset=self.OFFSET)
+				self.target.set_pose(drop_pos)
 
 		#region Validation constraints
 		# VALIDATION STEP 1 TURN
@@ -240,6 +247,6 @@ class NavigateToDropOff(Task):
 		
 		#endregion
 
-		self.state = State.CAPTURE
+		self.state = State.deliver
 		return		
 
