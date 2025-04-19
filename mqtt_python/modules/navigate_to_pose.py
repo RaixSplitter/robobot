@@ -223,7 +223,7 @@ class NavigateToPose(Task):
 				self.turn()
 				return
 			rvec, tvec, identifier = poses
-			center_pos = drop_point(rvec, tvec, False, offset=-0.02)
+			center_pos = drop_point(rvec, tvec, False, offset=-0.02, show = True, img = img)
 			self.target.set_pose(center_pos)
 
 	        
