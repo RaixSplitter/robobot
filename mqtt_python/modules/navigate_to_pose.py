@@ -87,9 +87,6 @@ class NavigateToPose(Task):
 		}
   
 	def change_state(self) -> None:
-		
-		
-  
 		if self.states_q: #Get next state
 			self.state = self.states_q.pop(0)
 		else: #Default state
@@ -218,12 +215,13 @@ class NavigateToPose(Task):
 			self.target.set_pose(poses[0]) #Set target
 		if self.target.type == PoseTarget.ARUCO_LD:
 			poses = get_pose(img, save_path="aruco_img.png")
-			poses = poses.get('LD', None)
+			print(poses)
+			poses = poses.get(53, None)
 			if not poses:
 				self.turn()
 				return
 			rvec, tvec, identifier = poses
-			center_pos = drop_point(rvec, tvec, False, offset=-0.02, show = True, img = img)
+			center_pos = drop_point(rvec, tvec, True, offset=-0.01, show = True, img = img)
 			self.target.set_pose(center_pos)
 
 	        
@@ -242,7 +240,7 @@ class NavigateToPose(Task):
 			return
 		
 		#endregion
-
+		print("GOTTA CAPTURE")
 		self.state = State.CAPTURE
 		return		
 

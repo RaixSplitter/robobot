@@ -38,7 +38,7 @@ class Task:
 	SEESAW     = Seesaw()
 	DELIVER_GOLF_BALL = DeliverGolfBall()
 	RETRIEVE_LUGGAGE = RetrieveLuggage()
-	GET_LUGGAGE = NavigateToPose(target = PoseTarget.ARUCO)
+	GET_LUGGAGE = NavigateToPose(target = PoseTarget.ARUCO_LD)
 	DELIVER_LUGGAGE = None
 	
 
@@ -94,7 +94,7 @@ class uniques:
 		# minmax(1, 2) : (2.0, 0.0, 0.4)
 	}
 	delegate_task = {
-		(0,1): [Task.NAVIGATE_TO_DROP_OFF,],
+		(0,1): [Task.GET_LUGGAGE,],
 		(4,8): [Task.AXE, Task.NAVIGATE_TO_POSE, ],
 		(5,100): [Task.EIGHT, Task.ROUNDABOUT],
 		(2,6): [Task.SEESAW,],
