@@ -12,8 +12,8 @@ class Roundabout(Task):
         self.topicCmd = "robobot/cmd/" # send to Teensy T0, T1, or teensy_interface
         self.topicRc  = service.topicCmd + "ti/rc"
         # task/job
-        # self.job = self.get_to_pos
-        self.job = self.do_a_outer_circle
+        self.job = self.get_to_pos
+        # self.job = self.do_a_outer_circle
         
         ### variables
         # robot
@@ -25,7 +25,7 @@ class Roundabout(Task):
         self.Kd = 0.4
         
         # state
-        self.pos_state = 0
+        self.pos_state = -1
         self.circle_state = 0 # 0 = pre detect, 1 = within range, 2 = out of range
         # self.current_action = [f"{self.robot_speed} 0.0", f"{self.robot_speed} 0.30", f"0.0 0.7"] # do_a_circle
         # self.current_action = [f"{self.robot_speed} 0.0", f"{self.robot_speed} 0.25", f"0.0 0.5"] # do_a_circle
@@ -49,22 +49,25 @@ class Roundabout(Task):
         input()
         service.send(service.topicCmd + "ti/rc", self.current_action[0])
 
-    def pid_loop(self, target: float, current: float) -> float:
-        error = target - current
-        self.cumulative_error += error * self.dt
-        # Potentially clamp integrator more tightly or differently
-        self.cumulative_error = max(min(self.cumulative_error, 1.0), -1.0)
+    # def pid_loop(self, target: float, current: float) -> float:
+    #     error = target - current
+    #     self.cumulative_error += error * self.dt
+    #     # Potentially clamp integrator more tightly or differently
+    #     self.cumulative_error = max(min(self.cumulative_error, 1.0), -1.0)
 
-        diff_error = (error - self.previous_error) / self.dt
-        self.previous_error = error
+    #     diff_error = (error - self.previous_error) / self.dt
+    #     self.previous_error = error
 
-        u = (self.Kp * error) \
-          + (self.Ki * self.cumulative_error) \
-          + (self.Kd * diff_error)
-        # print(f"target:{target:.2f}, current:{current:.2f}, e:{error:.2f}, u:{u:.2f}, u1:{max(min(u, 1.0), -1.0):.2f}")
-        return max(min(u, 0.35), -0.35)
+    #     u = (self.Kp * error) \
+    #       + (self.Ki * self.cumulative_error) \
+    #       + (self.Kd * diff_error)
+    #     # print(f"target:{target:.2f}, current:{current:.2f}, e:{error:.2f}, u:{u:.2f}, u1:{max(min(u, 1.0), -1.0):.2f}")
+    #     return max(min(u, 0.35), -0.35)
 
     def get_to_pos(self):
+        if self.circle_state == -1:
+            input()
+            self.circle_state = 0
         # get into position
         if self.pos_state == 0:
             if self.set_turn_time == None:
