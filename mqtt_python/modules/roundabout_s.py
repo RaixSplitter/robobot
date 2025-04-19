@@ -144,5 +144,5 @@ class Roundabout(Task):
     def loop(self):
         # print("circle state:", self.circle_state, "ir distance:", ir.ir[0], "bh:", pose.tripBh)
         print("ir distance:", ir.ir[0], ir.ir[0] >= self.outer_min_dist)
-        # self.job()
+        self.job()
         return TaskState.EXECUTING
