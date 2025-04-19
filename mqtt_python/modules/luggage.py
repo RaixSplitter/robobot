@@ -42,10 +42,10 @@ class RetrieveLuggage(Task):
 		self.DEFAULT_STATE = State.WAIT
 		self.DIST_TO_WALL = 0.12 #[M]
 		self.ROTATION = np.pi * 1/4
-		self.ORANGE_MIN = np.array([0, 0, 120])
+		self.ORANGE_MIN = np.array([0,71,0])
 		self.ORANGE_MAX = np.array([42, 109, 255])
-		self.ORANGE_THRESHHOLD = 0.5
-		self.last_car_pose = []
+		self.ORANGE_THRESHHOLD = 13
+		self.last_car_pose = 0
 		#endregion
   
 		#region States
@@ -126,26 +126,30 @@ class RetrieveLuggage(Task):
 	#endregion
  
 	def initialize(self):
-		ok, img, _ = cam.getImage()
-		if ok:
-			poses = get_pose(img, "captured_image.jpg")
-			if poses:
-				# Check if the car is in the image
-				rvec, tvec, identifier = poses.get("car", (None, None, None))
-				if identifier:
-					self.last_car_pose.append(tvec[0][0])
-     
-			#If the car is not in the image, we can assume that the car is not in the image
-			elif len(self.last_car_pose) > 1:
-				differences = [abs(self.last_car_pose[i] - self.last_car_pose[i - 1]) for i in range(1, len(self.last_car_pose))]
-				total_difference = sum(differences)
-				LOGGER.info(f"Total difference between consecutive positions: {total_difference}")
-				if total_difference < 0:
-					self.stop()
-					self.add_state(State.INTOPOS)
-					self.change_state()
-					return
+		# ok, img, _ = cam.getImage()
+		# if ok:
+		# 	poses = get_pose(img, "captured_image.jpg")
+		# 	cv2.imwrite("captured_image.jpg", img)
+		# 	if poses:
+		# 		# Check if the car is in the image
+		# 		rvec, tvec, identifier = poses.get("car", (None, None, None))
+    
+		# 		if identifier:
+		# 			if tvec[0][0] > self.last_car_pos:
+		# 				self.stop()
+		# 				self.add_state(State.INTOPOS)
+		# 				self.change_state()
+		# 			self.last_car_pos = tvec[0][0]
+	 
+		# 	#If the car is not in the image, we can assume that the car is not in the image
+		# 	elif self.last_car_pos :
 				
+		# 		if total_difference < 0:
+					
+		# 			return
+		self.stop()
+		self.add_state(State.INTOPOS)
+		self.change_state()
 		return
 		
 
@@ -182,7 +186,11 @@ class RetrieveLuggage(Task):
 		return
 
 	def jank_prepare(self):
+		print("Din mor er en luder")
 		ok, img, imgstate = cam.getImage()
+  
+		# Save the captured image for debugging or analysis
+		cv2.imwrite("captured_image.jpg", img)
   
 		if ok:
 			# poses = get_pose(img, "captured_image.jpg")
@@ -193,12 +201,25 @@ class RetrieveLuggage(Task):
 			hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 			# Threshold the image to get only orange colors
 			mask = cv2.inRange(hsv, self.ORANGE_MIN, self.ORANGE_MAX)
+   
+			# Save the mask for debugging or analysis
+			cv2.imwrite("orange_mask.jpg", mask)
+			print("gulerød", np.min(mask), np.max(mask), mask.dtype, mask.shape)
+	
 			
 			mean_v_mask = np.mean(mask, axis = 1)
+
+			# Save the vertical mean mask for debugging or analysis
+			np.savetxt("vertical_mean_mask.txt", mean_v_mask, fmt="%.2f")
+   
 			left_window = mean_v_mask[:int(len(mean_v_mask)/5)]
 			right_window = mean_v_mask[int(len(mean_v_mask)/5):]
-
-			if np.mean(left_window) > self.ORANGE_THRESHHOLD and np.mean(right_window) > self.ORANGE_THRESHHOLD:
+   
+			condition1 = np.mean(left_window) > self.ORANGE_THRESHHOLD
+			condition2 = np.mean(right_window) > self.ORANGE_THRESHHOLD
+			print(condition1, condition2)
+			print(np.mean(left_window), np.mean(right_window))
+			if condition1 and condition2:
 				self.stop()
 				self.add_state(State.JANK)
 				self.change_state()
@@ -216,7 +237,8 @@ class RetrieveLuggage(Task):
 	def jank(self):
 		if abs(pose.tripB) >= 0.3:
 			self.stop()
-			self.finish = True
+			# self.finish = True
+			return
 		else:
 			self.drive(reverse=True)
 	 

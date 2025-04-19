@@ -74,8 +74,8 @@ def get_pose(img, save_path=None):
 		
 		identifier, _marker_size = ARUCO_MAP.get(str(_id[0]), (None, None))
 		print(_id, identifier, _marker_size)
-		assert identifier
-		assert _marker_size
+		# assert identifier
+		# assert _marker_size
 		
 		_marker_points = get_marker_points(_marker_size)
 		
