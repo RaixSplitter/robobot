@@ -18,7 +18,7 @@ class Roundabout(Task):
         ### variables
         # robot
         self.robot_speed = 0.1
-        self.turn_time   = 1.5 # s
+        self.turn_time   = 0.5 # s
         self.Kp = 1.0
         self.Ki = 0.0
         self.Kd = 0.4
@@ -32,7 +32,7 @@ class Roundabout(Task):
         self.is_turning     = False
         self.set_turn_time  = 0
         self.dt             = max(ir.irInterval / 1000.0, 1e-6) # Avoid extremely small dt    
-        self.prev_d         = 2.0
+        self.prev_d         = 1.3
         
         # targets
         self.object_dist = (0.2, 0.4) # min/max
@@ -126,7 +126,7 @@ class Roundabout(Task):
         action = "0.15 0.0"
         
         if self.is_turning:
-            action = "0.0 0.40"
+            action = "0.15 0.6"
             if (time() - self.set_turn_time) >= self.turn_time or sensor_d >= self.outer_min_dist:
                 print("Turning off", (time() - self.set_turn_time) >= self.turn_time, sensor_d >= self.outer_min_dist)
                 self.is_turning = False
@@ -134,7 +134,7 @@ class Roundabout(Task):
         
         elif sensor_d > self.prev_d:
             # print("Turning on")
-            action = "0.0 0.40"
+            action = "0.15 0.6"
             self.is_turning = True
             self.set_turn_time = time()
         self.prev_d = sensor_d

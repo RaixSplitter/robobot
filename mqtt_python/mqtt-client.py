@@ -63,8 +63,8 @@ def loop():
 		service.send(service.topicCmd + "T0/leds","16 30 30 0") # LED 16: yellow - waiting
 		
 	# put servo down
-	# service.send(service.topicCmd + "T0/servo", "1 -900 200")
-	service.send(service.topicCmd + "T0/svos", "1 -899 200")
+	service.send(service.topicCmd + "T0/servo", "1 -900 200")
+	# service.send(service.topicCmd + "T0/svos", "1 -899 200")
 	# main state machine
 	edge.set_line_control_targets(0, 0)
 	while not (service.stop or gpio.stop()):
@@ -352,7 +352,7 @@ if __name__ == "__main__":
 	#service.setup('10.197.217.80') # Newton
 	#service.setup('10.197.218.172')
 	if service.connected:
-		service.send(service.topicCmd + "T0/svos", "0 0 0")
+		service.send(service.topicCmd + "T0/svos", "1 0 0")
 		loop()
 		service.terminate()
 	print("% Main Terminated")
