@@ -45,6 +45,7 @@ class RetrieveLuggage(Task):
 		self.ORANGE_MIN = np.array([0, 0, 120])
 		self.ORANGE_MAX = np.array([42, 109, 255])
 		self.ORANGE_THRESHHOLD = 0.5
+		self.last_car_pose = []
 		#endregion
   
 		#region States
@@ -127,18 +128,24 @@ class RetrieveLuggage(Task):
 	def initialize(self):
 		ok, img, _ = cam.getImage()
 		if ok:
-	
-			cv2.imwrite("captured_image_test.jpg", img)
-			# Convert the image to HSV color space
-			hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
-			# Apply the orange mask
-			mask = cv2.inRange(hsv, self.ORANGE_MIN, self.ORANGE_MAX)
-
-			# Save the masked image for debugging
-			cv2.imwrite("orange_mask_test.jpg", mask)
-		self.add_state(State.INTOPOS)
-		self.change_state()
+			poses = get_pose(img, "captured_image.jpg")
+			if poses:
+				# Check if the car is in the image
+				rvec, tvec, identifier = poses.get("car", (None, None, None))
+				if identifier:
+					self.last_car_pose.append(tvec[0][0])
+     
+			#If the car is not in the image, we can assume that the car is not in the image
+			elif len(self.last_car_pose) > 1:
+				differences = [abs(self.last_car_pose[i] - self.last_car_pose[i - 1]) for i in range(1, len(self.last_car_pose))]
+				total_difference = sum(differences)
+				LOGGER.info(f"Total difference between consecutive positions: {total_difference}")
+				if total_difference < 0:
+					self.stop()
+					self.add_state(State.INTOPOS)
+					self.change_state()
+					return
+				
 		return
 		
 
@@ -209,6 +216,7 @@ class RetrieveLuggage(Task):
 	def jank(self):
 		if abs(pose.tripB) >= 0.3:
 			self.stop()
+			self.finish = True
 		else:
 			self.drive(reverse=True)
 	 
@@ -219,7 +227,6 @@ class RetrieveLuggage(Task):
 
 	def wait(self):
 		ok, img, imgstate = cam.getImage()
-  
 		if ok:
 			pose = get_pose(img, "captured_image.jpg")
 		self.stop()

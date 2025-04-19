@@ -36,6 +36,10 @@ class PoseTarget(Enum):
 	ARUCO = 'aruco'
 	BLUE_BALL = 'blue'
 	ORANGE_BALL = 'orange'
+	A = 'A'
+	B = 'B'
+	C = 'C'
+	D = 'D'
 
 @dataclass
 class Target:
@@ -197,7 +201,7 @@ class NavigateToPose(Task):
 		return 
 	
 	def get_pose(self) -> bool:
-     
+	 
 		ok, img, imgTime = cam.getImage() # Get image
 		service.send(service.topicCmd + "T0/servo", "1 -901 200")
 

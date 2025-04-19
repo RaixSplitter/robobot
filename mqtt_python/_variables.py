@@ -38,6 +38,9 @@ class Task:
 	SEESAW     			 = Seesaw()
 	DELIVER_GOLF_BALL 	 = DeliverGolfBall()
 	RETRIEVE_LUGGAGE = RetrieveLuggage()
+	GET_LUGGAGE = NavigateToPose(PoseTarget = PoseTarget.ARUCO)
+	DELIVER_LUGGAGE = None
+	
 
 ### ROBOT VALUES ###
 # Default params, can and will be overwritten in `map.py`
