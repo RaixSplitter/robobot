@@ -32,6 +32,7 @@ class Roundabout(Task):
         self.is_turning     = False
         self.set_turn_time  = 0
         self.dt             = max(ir.irInterval / 1000.0, 1e-6) # Avoid extremely small dt    
+        self.prev_d         = 2.0
         
         # targets
         self.object_dist = (0.2, 0.4) # min/max
@@ -100,26 +101,6 @@ class Roundabout(Task):
                 self.is_turning = True
                 self.set_turn_time = time()
                 self.debug()
-
-    def do_a_circle_invert(self):
-        if pose.tripB >= self.drive_dist:
-            return TaskState.SUCCESS
-                    
-        sensor_d = ir.ir[0]
-        action = "0.15 0.0"
-        
-        if self.is_turning:
-            action = "0.0, 0.40"
-            if (time() - self.set_turn_time) >= self.turn_time or sensor_d >= 1.3:
-                self.is_turning = False
-        
-        elif sensor_d <= 1.3:
-            action = "0.0, 0.40"
-            self.is_turning = True
-        
-           
-        service.send(service.topicCmd + "ti/rc", action) # speed, angle
-
         
     def do_a_simple_circle(self):
         minv = 0.15
@@ -135,7 +116,26 @@ class Roundabout(Task):
         else:
             service.send(service.topicCmd + "ti/rc", "0.15 0.0") # drive straight # speed, angle
             pass
+
+    def do_a_outer_circle(self):
+        if pose.tripB >= self.drive_dist:
+            return TaskState.SUCCESS
+                    
+        sensor_d = ir.ir[0]
+        action = "0.15 0.0"
         
+        if self.is_turning:
+            action = "0.0, 0.40"
+            if (time() - self.set_turn_time) >= self.turn_time or sensor_d >= 1.3:
+                self.is_turning = False
+                self.prev_d = 2.0
+        
+        elif sensor_d > self.prev_d:
+            action = "0.0, 0.40"
+            self.is_turning = True
+        self.prev_d = sensor_d
+        
+        service.send(service.topicCmd + "ti/rc", action) # speed, angle        
 
     def loop(self):
         # print("circle state:", self.circle_state, "ir distance:", ir.ir[0], "bh:", pose.tripBh)
