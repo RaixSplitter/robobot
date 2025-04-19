@@ -25,6 +25,7 @@ class Roundabout(Task):
         self.Kd = 0.4
         
         # state
+        self.pos_state = 0
         self.circle_state = 0 # 0 = pre detect, 1 = within range, 2 = out of range
         # self.current_action = [f"{self.robot_speed} 0.0", f"{self.robot_speed} 0.30", f"0.0 0.7"] # do_a_circle
         # self.current_action = [f"{self.robot_speed} 0.0", f"{self.robot_speed} 0.25", f"0.0 0.5"] # do_a_circle
@@ -65,14 +66,15 @@ class Roundabout(Task):
 
     def get_to_pos(self):
         # get into position
-        if self.circle_state == 0:
+        if self.pos_state == 0:
             if self.set_turn_time == None:
                 self.set_turn_time = time()
             if (time() - self.set_turn_time) >= self.pos_time:
-                self.circle_state == 1
-            service.send(service.topicCmd + "ti/rc", "0.2 0.5") # drive straight # speed, angle
+                self.pos_state == 1
+                self.set_turn_time = None
+            service.send(service.topicCmd + "ti/rc", "0.2 0.5") # turn # speed, angle
         
-        if True:
+        if self.pos_state == 1:
             # change job
             pose.tripBreset()
             self.job = self.do_a_circle
