@@ -1,3 +1,4 @@
-2025-04-16 17:17:22,361 modules.luggage DEBUG State: State.INTOPOS, State Queue: []
-2025-04-16 17:17:26,914 modules.luggage DEBUG State: State.LOWER_ARM, State Queue: []
-2025-04-16 17:17:26,964 modules.luggage DEBUG State: State.JANK_PREPARE, State Queue: []
+2025-04-19 12:54:03,375 modules.luggage DEBUG State: State.INTOPOS, State Queue: []
+2025-04-19 12:54:03,377 modules.luggage DEBUG State: State.LOWER_ARM, State Queue: []
+2025-04-19 12:54:03,427 modules.luggage DEBUG State: State.JANK_PREPARE, State Queue: []
+2025-04-19 12:54:03,753 modules.luggage DEBUG State: State.JANK, State Queue: []

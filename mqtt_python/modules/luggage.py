@@ -42,8 +42,8 @@ class RetrieveLuggage(Task):
 		self.DEFAULT_STATE = State.WAIT
 		self.DIST_TO_WALL = 0.12 #[M]
 		self.ROTATION = np.pi * 1/4
-		self.ORANGE_MIN = np.array([0, 100, 100])
-		self.ORANGE_MAX = np.array([10, 255, 255])
+		self.ORANGE_MIN = np.array([0, 0, 120])
+		self.ORANGE_MAX = np.array([42, 109, 255])
 		self.ORANGE_THRESHHOLD = 0.5
 		#endregion
   
@@ -125,6 +125,18 @@ class RetrieveLuggage(Task):
 	#endregion
  
 	def initialize(self):
+		ok, img, _ = cam.getImage()
+		if ok:
+	
+			cv2.imwrite("captured_image_test.jpg", img)
+			# Convert the image to HSV color space
+			hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+			# Apply the orange mask
+			mask = cv2.inRange(hsv, self.ORANGE_MIN, self.ORANGE_MAX)
+
+			# Save the masked image for debugging
+			cv2.imwrite("orange_mask_test.jpg", mask)
 		self.add_state(State.INTOPOS)
 		self.change_state()
 		return
