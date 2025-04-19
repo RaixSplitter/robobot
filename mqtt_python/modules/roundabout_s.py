@@ -13,13 +13,13 @@ class Roundabout(Task):
         self.topicRc  = service.topicCmd + "ti/rc"
         # task/job
         # self.job = self.get_to_pos
-        self.job = self.do_a_simple_circle
+        self.job = self.do_a_outer_circle
         
         ### variables
         # robot
         self.robot_speed = 0.1
-        self.turn_time   = 0.5 # s
-        self.Kp = 2.0
+        self.turn_time   = 1.5 # s
+        self.Kp = 1.0
         self.Ki = 0.0
         self.Kd = 0.4
         
@@ -36,6 +36,7 @@ class Roundabout(Task):
         
         # targets
         self.object_dist = (0.2, 0.4) # min/max
+        self.outer_min_dist = 0.2
         self.drive_dist  = 5 # m?
     
     def debug(self):
@@ -125,20 +126,23 @@ class Roundabout(Task):
         action = "0.15 0.0"
         
         if self.is_turning:
-            action = "0.0, 0.40"
-            if (time() - self.set_turn_time) >= self.turn_time or sensor_d >= 1.3:
+            action = "0.0 0.40"
+            if (time() - self.set_turn_time) >= self.turn_time or sensor_d >= self.outer_min_dist:
+                print("Turning off", (time() - self.set_turn_time) >= self.turn_time, sensor_d >= self.outer_min_dist)
                 self.is_turning = False
                 self.prev_d = 2.0
         
         elif sensor_d > self.prev_d:
-            action = "0.0, 0.40"
+            # print("Turning on")
+            action = "0.0 0.40"
             self.is_turning = True
+            self.set_turn_time = time()
         self.prev_d = sensor_d
         
         service.send(service.topicCmd + "ti/rc", action) # speed, angle        
 
     def loop(self):
         # print("circle state:", self.circle_state, "ir distance:", ir.ir[0], "bh:", pose.tripBh)
-        print("ir distance:", ir.ir[0])
-        self.job()
+        print("ir distance:", ir.ir[0], ir.ir[0] >= self.outer_min_dist)
+        # self.job()
         return TaskState.EXECUTING

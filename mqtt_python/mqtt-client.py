@@ -352,6 +352,7 @@ if __name__ == "__main__":
 	#service.setup('10.197.217.80') # Newton
 	#service.setup('10.197.218.172')
 	if service.connected:
+		service.send(service.topicCmd + "T0/svos", "0 0 0")
 		loop()
 		service.terminate()
 	print("% Main Terminated")
