@@ -3,7 +3,7 @@ from math import pi
 from modules.axe import Axe
 from modules.eight import Eight
 from modules.roundabout import Roundabout
-from modules.navigate_to_pose import NavigateToPose
+from modules.navigate_to_pose import NavigateToPose, PoseTarget
 from modules.navigate_to_drop_off import NavigateToDropOff
 from modules.luggage import RetrieveLuggage
 from modules.ball_detection import pose_est_ball_from_img
@@ -38,6 +38,9 @@ class Task:
 	SEESAW     = Seesaw()
 	DELIVER_GOLF_BALL = DeliverGolfBall()
 	RETRIEVE_LUGGAGE = RetrieveLuggage()
+	GET_LUGGAGE = NavigateToPose(PoseTarget = PoseTarget.ARUCO)
+	DELIVER_LUGGAGE = None
+	
 
 ### ROBOT VALUES ###
 # Default params, can and will be overwritten in `map.py`
@@ -69,7 +72,7 @@ node_connections = { # n : ((np, from, to),...)
 
 class uniques:
 	map_speed = { # consistent order, use minmax
-    	minmax(1,2): 0.35, 
+		minmax(1,2): 0.35, 
 		minmax(1,4): 0.15,
 		minmax(2,6): 0.15,
 	}
