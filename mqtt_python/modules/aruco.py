@@ -58,7 +58,7 @@ def get_marker_points(marker_size) -> np.array:
 	return marker_points
 
 
-def get_pose(img, save_path=None):
+def get_pose(img, save_path=None) -> dict:
 	corners, ids, rejected = DETECTOR.detectMarkers(
 		cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 	)
@@ -81,7 +81,7 @@ def get_pose(img, save_path=None):
 		
 		ret, rvec, tvec = cv2.solvePnP(_marker_points, _corners, MTX, DIST)
 		if ret:
-			poses[identifier] = (rvec, tvec, identifier)
+			poses[_id] = (rvec, tvec, identifier)
 
 		if save_path:
 			img_plot = cv2.drawFrameAxes(img, MTX, DIST, rvec, tvec, _marker_size)
