@@ -17,23 +17,23 @@ OFFSET = 0.08
 ARUCO_DICT = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
 ARUCO_MAP = {
 	# Sorting Center, MARKERSIZE 10 CM, 0.1 M
-	"10": ("A", 0.1),
-	"11": ("A", 0.1),
-	"12": ("B", 0.1),
-	"13": ("B", 0.1),
-	"14": ("C", 0.1),
-	"15": ("C", 0.1),
-	"16": ("D", 0.1),
-	"17": ("D", 0.1),
+	10: ("A", 0.1),
+	11: ("A", 0.1),
+	12: ("B", 0.1),
+	13: ("B", 0.1),
+	14: ("C", 0.1),
+	15: ("C", 0.1),
+	16: ("D", 0.1),
+	17: ("D", 0.1),
 	# Luggage, MARKERSIZE 4 CM, 0.04 M
-	"5": ("car", 0.035),  # 0.35
-	"20": ("LA", 0.04),
-	"53": ("LD", 0.04),
+	5: ("car", 0.035),  # 0.35
+	20: ("LA", 0.04),
+	53: ("LD", 0.04),
 	# EXIT
-	"25": ("EXIT", 0.1),
+	25: ("EXIT", 0.1),
 	# EXTRA
-	"18": ("extra1", 0.1),
-	"19": ("extra2", 0.1),
+	18: ("extra1", 0.1),
+	19: ("extra2", 0.1),
 }
 
 
@@ -72,7 +72,7 @@ def get_pose(img, save_path=None) -> dict:
 
 	for _id, _corners in zip(ids, corners):
 		
-		identifier, _marker_size = ARUCO_MAP.get(str(_id[0]), (None, None))
+		identifier, _marker_size = ARUCO_MAP.get(_id[0], (None, None, None))
 		print(_id, identifier, _marker_size)
 		# assert identifier
 		# assert _marker_size
@@ -81,7 +81,7 @@ def get_pose(img, save_path=None) -> dict:
 		
 		ret, rvec, tvec = cv2.solvePnP(_marker_points, _corners, MTX, DIST)
 		if ret:
-			poses[_id] = (rvec, tvec, identifier)
+			poses[_id[0]] = (rvec, tvec, identifier)
 
 		if save_path:
 			img_plot = cv2.drawFrameAxes(img, MTX, DIST, rvec, tvec, _marker_size)
@@ -92,12 +92,18 @@ def get_pose(img, save_path=None) -> dict:
 	return poses
 
 
-def drop_point(rvec, tvec, delivery=True, offset=OFFSET):
+def drop_point(rvec, tvec, delivery=True, offset=OFFSET, show = False, img = None):
 	if delivery:
 		offset_vector = np.dot(cv2.Rodrigues(rvec)[0], np.array([0, 0, offset]))
 	else:
 		offset_vector = np.dot(cv2.Rodrigues(rvec)[0], np.array([offset, 0, 0]))
 	position = tvec.flatten() + offset_vector
+ 
+	if show:
+		projected_point, _ = cv2.projectPoints(position.reshape(-1, 3), np.zeros((3,1)), np.zeros((3,1)), MTX, DIST)
+		center = tuple(projected_point.ravel().astype(int))
+		img = cv2.circle(img, center, radius=5, color=(0, 255, 0), thickness=-1)
+		cv2.imwrite("TARGETVISION.jpg", img)
 
 	return position
 

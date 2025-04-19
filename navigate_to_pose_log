@@ -1,4 +1,2 @@
-2025-04-19 15:37:31,794 modules.luggage DEBUG State: State.INTOPOS, State Queue: []
-2025-04-19 15:37:33,957 modules.luggage DEBUG State: State.LOWER_ARM, State Queue: []
-2025-04-19 15:37:34,005 modules.luggage DEBUG State: State.JANK_PREPARE, State Queue: []
-2025-04-19 15:37:34,726 modules.luggage DEBUG State: State.JANK, State Queue: []
+2025-04-19 17:45:42,065 modules.navigate_to_drop_off DEBUG State: State.TURN_RIGHT, State Queue: []
+2025-04-19 17:45:55,661 modules.navigate_to_drop_off DEBUG State: State.VERIFY_POSITION, State Queue: []
