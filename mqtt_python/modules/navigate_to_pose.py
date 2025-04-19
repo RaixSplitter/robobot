@@ -5,7 +5,7 @@ from sedge import edge
 from spose import pose
 from uservice import service
 from modules.ball_detection import *
-from modules.aruco import get_pose
+from modules.aruco import drop_point, get_pose
 from scam import cam
 import time
 import logging
@@ -34,6 +34,8 @@ class State(Enum):
 	CAPTURE = 'CAPTURE'
 class PoseTarget(Enum):
 	ARUCO = 'aruco'
+	ARUCO_LA = 'LA'
+	ARUCO_LD = 'LD'
 	BLUE_BALL = 'blue'
 	ORANGE_BALL = 'orange'
 	A = 'A'
@@ -209,14 +211,24 @@ class NavigateToPose(Task):
 		# Get pose
 		if self.target.type == PoseTarget.BLUE_BALL:
 			poses = pose_est_ball_from_img(img, Ball_Color=Ball_Color.ORANGE)
-		if self.target.type == PoseTarget.ARUCO:
-			raise NotImplementedError("Aruco LOGIC has not been implemented")
+			if not poses: #If no poses turnx
+				self.turn()
+				return
 			
-		if not poses: #If no poses turn
-			self.turn()
-			return
+			self.target.set_pose(poses[0]) #Set target
+		if self.target.type == PoseTarget.ARUCO_LD:
+			poses = get_pose(img, save_path="aruco_img.png")
+			poses = poses.get('LD', None)
+			if not poses:
+				self.turn()
+				return
+			rvec, tvec, identifier = poses
+			center_pos = drop_point(rvec, tvec, False, offset=-0.02)
+			self.target.set_pose(center_pos)
+
+	        
+			
 		
-		self.target.set_pose(poses[0]) #Set target
 
 		#region Validation constraints
 		# VALIDATION STEP 1 TURN

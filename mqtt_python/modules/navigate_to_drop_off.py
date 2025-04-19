@@ -74,10 +74,11 @@ class NavigateToDropOff(Task):
 		self.state: State = State.VERIFY_POSITION
 		self.default_state : State = State.VERIFY_POSITION
 		self.target = Target(target)
+		self.delivery = False
 		self.finish = False
 		self.actions = {
 			State.VERIFY_POSITION 		    : self.verify_position,
-			State.NAVIGATE_TO_CORNER 		: self.navigate_to_corner
+			State.NAVIGATE_TO_CORNER 		: self.navigate_to_corner,
 			State.TARGET_TURN 			    : self.turn_to_target,
 			State.TURN_LEFT 			    : self.turn_left,
 			State.TURN_RIGHT			    : self.turn_right,
@@ -169,8 +170,6 @@ class NavigateToDropOff(Task):
 	  
 		else: # Turns right
 			service.send(service.topicCmd + "ti/rc", f"0.0 {-self.TURNRATE}")
-	  
-	  
 	
 	def drive(self, reverse : bool = False):
 		"""
@@ -211,7 +210,24 @@ class NavigateToDropOff(Task):
 		#endregion
   
 	def navigate_to_corner(self):
-		pass
+		if not self.turn_to_target(): #Examine if robot needs to turn towards target
+			self.add_state(State.NAVIGATE_TO_CORNER)
+			self.change_state()
+			return		
+
+		# VALIDATION STEP 2 DRIVE
+		elif not self.drive_to_target(): #Examine if robot needs to drive to target or backoff
+			self.add_state(State.NAVIGATE_TO_CORNER)		
+			self.change_state()
+			return
+		elif self.delivery:
+			self.add_state(State.DELIVER)
+			self.change_state()
+			return
+		else:
+			self.add_state(State.VERIFY_POSITION)
+			self.change_state()
+			return
 
 	def verify_position(self):
 		ok, img, imgTime = cam.getImage() # Get image
@@ -229,36 +245,26 @@ class NavigateToDropOff(Task):
 				self.target.set_pose(drop_pos)
 				self.add_state(State.NAVIGATE_TO_CORNER)
 				LOGGER.info('FOUND TARGET')
-		else: #If no target found
-			if not poses: #If no poses turn
-				self.turn()
 				return
-			elif len(poses) == 1:
-				rvec, tvec, identifier = list(poses.values())[0]
-				drop_pos = drop_point(rvec, tvec, delivery=False, offset=0.3, show = True, img = img)
-				self.target.set_pose(drop_pos)
-				LOGGER.info('NO TARGET FOUND GOING TO NEXT CORNER', identifier)
-			else: #If multiple poses, get the pose with the rightmost translation vector
-				# Get the pose with the largest x value
-				target_pose = max(poses.values(), key=lambda x: x[1][0][0])
-				rvec, tvec, identifier = target_pose
-				drop_pos = drop_point(rvec, tvec, delivery=False, offset=0.3, show = True, img = img)
-				self.target.set_pose(drop_pos)
-				LOGGER.info('NO TARGET FOUND GOING TO NEXT CORNER M2', identifier)
 
-		#region Validation constraints
-		# VALIDATION STEP 1 TURN
-		if not self.turn_to_target(): #Examine if robot needs to turn towards target
-			self.change_state()
-			return		
-
-		# VALIDATION STEP 2 DRIVE
-		elif not self.drive_to_target(): #Examine if robot needs to drive to target or backoff
+		if not poses: #If no poses turn
+			self.turn()
+			return
+		elif len(poses) == 1:
+			rvec, tvec, identifier = list(poses.values())[0]
+			drop_pos = drop_point(rvec, tvec, delivery=False, offset=0.3, show = True, img = img)
+			self.target.set_pose(drop_pos)
+			LOGGER.info('NO TARGET FOUND GOING TO NEXT CORNER', identifier)
+			self.add_state(State.NAVIGATE_TO_CORNER)
 			self.change_state()
 			return
-		
-		#endregion
-
-		self.state = State.deliver
-		return		
-
+		else: #If multiple poses, get the pose with the rightmost translation vector
+			# Get the pose with the largest x value
+			target_pose = max(poses.values(), key=lambda x: x[1][0][0])
+			rvec, tvec, identifier = target_pose
+			drop_pos = drop_point(rvec, tvec, delivery=False, offset=0.3, show = True, img = img)
+			self.target.set_pose(drop_pos)
+			LOGGER.info('NO TARGET FOUND GOING TO NEXT CORNER M2', identifier)
+			self.add_state(State.NAVIGATE_TO_CORNER)
+			self.change_state()
+			return
