@@ -42,6 +42,9 @@ class RetrieveLuggage(Task):
 		self.DEFAULT_STATE = State.WAIT
 		self.DIST_TO_WALL = 0.12 #[M]
 		self.ROTATION = np.pi * 1/4
+		self.ORANGE_MIN = np.array([0, 100, 100])
+		self.ORANGE_MAX = np.array([10, 255, 255])
+		self.ORANGE_THRESHHOLD = 0.5
 		#endregion
   
 		#region States
@@ -163,17 +166,33 @@ class RetrieveLuggage(Task):
 		ok, img, imgstate = cam.getImage()
   
 		if ok:
-			poses = get_pose(img, "captured_image.jpg")
-			print(poses,ir.ir[1])
-   
-			car_pose = poses.get('car', None)
-			if car_pose:
-				rvec, tvec, identifier = car_pose
-				print("SWAPPING STATES")
+			# poses = get_pose(img, "captured_image.jpg")
+			# print(poses,ir.ir[1])
+
+			#Take average of vertical 
+			# Convert the image to HSV color space
+			hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+			# Threshold the image to get only orange colors
+			mask = cv2.inRange(hsv, self.ORANGE_MIN, self.ORANGE_MAX)
+			
+			mean_v_mask = np.mean(mask, axis = 1)
+			left_window = mean_v_mask[:int(len(mean_v_mask)/5)]
+			right_window = mean_v_mask[int(len(mean_v_mask)/5):]
+
+			if np.mean(left_window) > self.ORANGE_THRESHHOLD and np.mean(right_window) > self.ORANGE_THRESHHOLD:
+				self.stop()
 				self.add_state(State.JANK)
 				self.change_state()
 				pose.tripBreset()
 				return
+			
+
+			# if car_pose:
+			# 	rvec, tvec, identifier = car_pose
+			# 	print("SWAPPING STATES")
+			# 	self.add_state(State.JANK)
+			# 	self.change_state()
+			# 	return
 
 	def jank(self):
 		if abs(pose.tripB) >= 0.3:
