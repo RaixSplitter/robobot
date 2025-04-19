@@ -18,6 +18,7 @@ class Roundabout(Task):
         ### variables
         # robot
         self.robot_speed = 0.1
+        self.pos_time    = 1.0
         self.turn_time   = 0.5 # s
         self.Kp = 1.0
         self.Ki = 0.0
@@ -29,14 +30,15 @@ class Roundabout(Task):
         # self.current_action = [f"{self.robot_speed} 0.0", f"{self.robot_speed} 0.25", f"0.0 0.5"] # do_a_circle
         self.current_action = [f"{self.robot_speed} 0.0", f"{self.robot_speed} 0.25", f"0.0 0.5"] # do_a_circle
         
+        
         self.is_turning     = False
-        self.set_turn_time  = 0
+        self.set_turn_time  = None
         self.dt             = max(ir.irInterval / 1000.0, 1e-6) # Avoid extremely small dt    
-        self.prev_d         = 1.3
+        self.prev_d         = 99
         
         # targets
         self.object_dist = (0.2, 0.4) # min/max
-        self.outer_min_dist = 0.2
+        self.outer_min_dist = 0.1
         self.drive_dist  = 5 # m?
     
     def debug(self):
@@ -63,7 +65,13 @@ class Roundabout(Task):
 
     def get_to_pos(self):
         # get into position
-        ...
+        if self.circle_state == 0:
+            if self.set_turn_time == None:
+                self.set_turn_time = time()
+            if (time() - self.set_turn_time) >= self.pos_time:
+                self.circle_state == 1
+            service.send(service.topicCmd + "ti/rc", "0.2 0.5") # drive straight # speed, angle
+        
         if True:
             # change job
             pose.tripBreset()
@@ -120,23 +128,26 @@ class Roundabout(Task):
 
     def do_a_outer_circle(self):
         if pose.tripB >= self.drive_dist:
+            print("END")
             return TaskState.SUCCESS
                     
         sensor_d = ir.ir[0]
         action = "0.15 0.0"
         
         if self.is_turning:
-            action = "0.15 0.6"
-            if (time() - self.set_turn_time) >= self.turn_time or sensor_d >= self.outer_min_dist:
-                print("Turning off", (time() - self.set_turn_time) >= self.turn_time, sensor_d >= self.outer_min_dist)
+            action = "0.15 1.1"
+            if self.set_turn_time == None and sensor_d >= self.outer_min_dist:
+                self.set_turn_time = time()
+            if self.set_turn_time != None and (time() - self.set_turn_time) >= self.turn_time:
+                print("Turning off", sensor_d >= self.outer_min_dist)
                 self.is_turning = False
-                self.prev_d = 2.0
+                self.set_turn_time = None
+                self.prev_d = 99
         
         elif sensor_d > self.prev_d:
             # print("Turning on")
-            action = "0.15 0.6"
+            # action = "0.15 1.0"
             self.is_turning = True
-            self.set_turn_time = time()
         self.prev_d = sensor_d
         
         service.send(service.topicCmd + "ti/rc", action) # speed, angle        
