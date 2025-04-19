@@ -245,6 +245,7 @@ class UService:
 		if self.terminating:
 			return
 		print("% shutting down")
+		
 		if self.connected and not self.confirmedNotMaster:
 			service.send(service.topicCmd + "T0/stop","")
 			service.send(service.topicCmd + "T0/leds","14 0 0 0")
@@ -252,7 +253,7 @@ class UService:
 			service.send(service.topicCmd + "T0/leds","15 0 0 0")
 			service.send(service.topicCmd + "T0/leds","16 0 0 0")
 			t.sleep(0.01)
-			service.send(service.topicCmd + "T0/svos", "0 0 0")
+			service.send(service.topicCmd + "T0/svos", "0 -899 200")
 			# stop interface logging
 			service.send("robobot/cmd/ti/log", "0")
 		self.terminating = True

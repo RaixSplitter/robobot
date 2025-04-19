@@ -53,7 +53,7 @@ class Target:
 			self.dist /= 2
 		print(f"Target Distance Set to {self.dist}")
   
-class NavigateBallCenter(Task):
+class NavigateToDropOff(Task):
 	def __init__(self, target : PoseTarget = PoseTarget.BLUE_BALL):
 		super().__init__(name="Navigate")
 
@@ -82,7 +82,7 @@ class NavigateBallCenter(Task):
 		}
 	
 	#region helper functions
- 	def loop(self, detection_target: str = "ball"):
+	def loop(self, detection_target: str = "ball"):
 		action = self.actions[self.state]
 		error = action()
   

@@ -38,7 +38,7 @@ class Task:
 	SEESAW     			 = Seesaw()
 	DELIVER_GOLF_BALL 	 = DeliverGolfBall()
 	RETRIEVE_LUGGAGE = RetrieveLuggage()
-	GET_LUGGAGE = NavigateToPose(PoseTarget = PoseTarget.ARUCO)
+	GET_LUGGAGE = NavigateToPose(target = PoseTarget.ARUCO)
 	DELIVER_LUGGAGE = None
 	
 
