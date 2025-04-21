@@ -21,10 +21,13 @@ class Eight(Task):
         self.follow_line_again = False
         
         self.trip_can_be_reset = True
+        
+        # 'Parameters'
         self.distance_to_hopper = 0.25 # m
         self.right_turn_angle = -3.0 # radians
         self.distance_to_eight = 0.8 + self.distance_to_hopper # m
         self.distances_to_drive_eight = [1.5, 0.9] # m, before and after waiting
+        self.wait_times = [3.0, 3.0] # seconds 
 
     def loop(self):
         """
@@ -88,9 +91,10 @@ class Eight(Task):
                 self.found_robot = True
                 self.action_start_time = time.time()
 
-            if self.found_robot and 3 < time.time() - self.action_start_time:
+            if self.found_robot and self.wait_times[0] < time.time() - self.action_start_time:
                 # print("Going")
                 self.waiting_for_ir = False
+                self.found_robot = False
                 self.follow_line = True
                 self.action_start_time = time.time()
                 pose.tripBreset()
@@ -120,9 +124,10 @@ class Eight(Task):
                 self.found_robot = True
                 self.action_start_time = time.time()
 
-            if self.found_robot and 3 < time.time() - self.action_start_time:
+            if self.found_robot and self.wait_times[1] < time.time() - self.action_start_time:
                 # print("Going")
                 self.waiting_for_ir_again = False
+                self.found_robot = False
                 self.follow_line_again = True
                 self.action_start_time = time.time()
                 pose.tripBreset()
