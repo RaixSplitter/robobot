@@ -69,6 +69,7 @@ class uniques:
 	map_speed = { # consistent order, use minmax
     	minmax(1,2): 0.35, 
 		minmax(1,4): 0.15,
+		minmax(4,5): 0.20,
 		minmax(2,6): 0.15,
 	}
 	map_turn = { 
@@ -89,7 +90,8 @@ class uniques:
 		# minmax(1, 2) : (2.0, 0.0, 0.4)
 	}
 	delegate_task = {
-		# (0,1): [Task.ROUNDABOUT],
+		# (0,1): [Task.EIGHT, Task.ROUNDABOUT],
+		(0,1): [Task.ROUNDABOUT],
 		(4,8): [Task.AXE, Task.NAVIGATE_TO_POSE, Task.NAVIGATE_TO_DROP_OFF],
 		(5,100): [Task.EIGHT, Task.ROUNDABOUT],
 		(2,6): [Task.SEESAW,],
