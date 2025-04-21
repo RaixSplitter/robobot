@@ -112,7 +112,7 @@ class Roundabout(Task):
         elif self.pos_state == 4:
             if self.set_turn_time == None:
                 self.set_turn_time = time()
-            if (time() - self.set_turn_time) >= 0.5:
+            if (time() - self.set_turn_time) >= 0.3: # 0.5 for do_a_circle
                 self.pos_state += 1
                 self.set_turn_time = None
             service.send(service.topicCmd + "ti/rc", "0.0 1.0") # turn # speed, angle
@@ -191,15 +191,15 @@ class Roundabout(Task):
             self.exit_timer = time()
         if abs(time() - self.exit_timer) >= 9.0:
             service.send(service.topicCmd + "ti/rc", f"0.0 0.0")
-            input("Done")
+            # input("Done")
             self.job = self.get_out
     
     def get_out(self):
-        sensor_0 = ir.ir[0]
-        sensor_1 = ir.ir[1]
+        sensor_s = ir.ir[0]
+        sensor_f = ir.ir[1]
         if self.exit_state == 0: # drive straigt until sensor detect
             action = "0.9 0.0"
-            if sensor_1 <= 0.2:
+            if sensor_f <= 0.2:
                 self.exit_state    = 1
                 self.set_turn_time = time()
 
@@ -210,17 +210,30 @@ class Roundabout(Task):
                 self.set_turn_time = time()
         
         elif self.exit_state in [2,3]: # turn until robot is parallel with wall
-            action = "-0.05 -0.5"
+            action = "-0.05 -0.4"
             if self.set_turn_time != None and (time() - self.set_turn_time) >= 1.5:
                 self.exit_state    = 3
-            if self.exit_state == 3 and sensor_0 < 0.09:
+            if self.exit_state == 3 and sensor_s < 0.11:
                 self.exit_state    = 4
                 self.set_turn_time = None
+                self.prev_d = sensor_s
         
         elif self.exit_state == 4:
             action = "0.15 0.0"
+            # wall align attempt
+            # turn_action = 0.0
+            # if sensor_s - self.prev_d >= 0.05:
+            #     turn_action = -0.1
+            # elif sensor_s - self.prev_d <= 0.05:
+            #     turn_action = 0.1
+            # if sensor_s > 0.1:
+            #     turn_action = turn_action + 0.11
+            # action = f"0.15 {turn_action}"
+                
             if edge.on_line:
+                service.send(service.topicCmd + "ti/rc", f"0.0 0.0")            
                 return TaskState.SUCCESS
+            self.prev_d = sensor_s
         service.send(service.topicCmd + "ti/rc", action) # speed, angle
         # print(self.exit_state)
 
