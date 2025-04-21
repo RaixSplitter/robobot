@@ -18,7 +18,6 @@ class Roundabout(Task):
         ### variables
         # robot
         self.robot_speed = 0.1
-        self.pos_time    = 1.0
         self.turn_time   = 0.5 # s
         self.Kp = 1.0
         self.Ki = 0.0
@@ -72,14 +71,31 @@ class Roundabout(Task):
         if self.pos_state == 0:
             if self.set_turn_time == None:
                 self.set_turn_time = time()
-            if (time() - self.set_turn_time) >= self.pos_time:
-                self.pos_state == 1
+            if (time() - self.set_turn_time) >= 1.0:
+                self.pos_state += 1
                 self.set_turn_time = None
             service.send(service.topicCmd + "ti/rc", "0.2 0.5") # turn # speed, angle
         
         if self.pos_state == 1:
+            if self.set_turn_time == None:
+                self.set_turn_time = time()
+            if (time() - self.set_turn_time) >= 1.0:
+                self.pos_state += 1
+                self.set_turn_time = None
+            service.send(service.topicCmd + "ti/rc", "0.2 0.0") # turn # speed, angle
+
+        if self.pos_state == 2:
+            if self.set_turn_time == None:
+                self.set_turn_time = time()
+            if (time() - self.set_turn_time) >= 1.0:
+                self.pos_state += 1
+                self.set_turn_time = None
+            service.send(service.topicCmd + "ti/rc", "0.2 -0.5") # turn # speed, angle
+            
+        if self.pos_state == 3:
             # change job
             pose.tripBreset()
+            input("END")
             self.job = self.do_a_circle
 
     def do_a_circle(self):
