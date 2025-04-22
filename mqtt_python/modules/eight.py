@@ -25,14 +25,14 @@ class Eight(Task):
         self.trip_can_be_reset = True
         
         # 'Parameters'
-        # self.pid_values = (0.9, 0.0, 0.5)
+        self.pid_values = (2.0, 0.0, 0.6)
         self.move_speed = 0.25
         self.line_target = 0.0 # -2...2 where on the line to follow, we want to lean left to hit crossroad
         self.distance_to_hopper = 0.25 # m
         self.backing_distance   = 0.1 # m
         self.right_turn_angle = -3.1 # radians
         self.distance_to_eight = 0.6 + self.distance_to_hopper - self.backing_distance# m
-        self.distances_to_drive_eight = [1.5, 1.3] # m, before and after waiting
+        self.distances_to_drive_eight = [1.5, 1.1] # m, before and after waiting
         self.wait_times = [3.0, 3.0] # seconds 
         self.detect_robot_distance = 0.3 # meters
 
@@ -56,7 +56,7 @@ class Eight(Task):
 
         if self.toppling_hopper:
             # print("Toppling hopper")
-            service.send(service.topicCmd + "ti/rc", "0.3 0.0") # drive forward # speed, angle
+            service.send(service.topicCmd + "ti/rc", "0.25 0.0") # drive forward # speed, angle
             if pose.tripB >= self.distance_to_hopper:
                 service.send(service.topicCmd + "T0/servo", "1 -1000 200") # Up position
                 service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
@@ -88,7 +88,7 @@ class Eight(Task):
                 self.waiting_for_ir = True
 
         if self.waiting_for_ir:
-            # print("Wating for ir")
+            print("Wating for ir")
             edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
             service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stand still # speed, angle
 
@@ -104,11 +104,13 @@ class Eight(Task):
                 self.found_robot = False
                 self.action_start_time = None
                 self.follow_line = True
+                service.send(service.topicCmd + "ti/rc", "0.0 0.0") # drive forward # speed, angle
                 pose.tripBreset()
 
         if self.follow_line:
-            # print("Following line")
-            # edge.Kp, edge.Ki, edge.Kd = self.pid_values
+            print("Following line")
+            edge.Kp, edge.Ki, edge.Kd = self.pid_values
+            print(edge.Kp, edge.Ki, edge.Kd)
             edge.set_line_control_targets(
                 target_velocity=self.move_speed,
                 target_position=self.line_target # follow the left edge of the line to assure we take the right turn in the 8
@@ -119,7 +121,7 @@ class Eight(Task):
 
 
         if self.waiting_for_ir_again:
-            # print("Wating for ir")
+            print("Wating for ir again")
             edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
             service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stand still # speed, angle
 
@@ -138,8 +140,8 @@ class Eight(Task):
                 pose.tripBreset()
 
         if self.follow_line_again:
-            # print("Following line")
-            # edge.Kp, edge.Ki, edge.Kd = self.pid_values
+            print("Following line again")
+            edge.Kp, edge.Ki, edge.Kd = self.pid_values
             edge.set_line_control_targets(
                 target_velocity=self.move_speed,
                 target_position=self.line_target # follow the left edge of the line to assure we take the right turn in the 8
@@ -147,7 +149,7 @@ class Eight(Task):
             if self.distances_to_drive_eight[1] < pose.tripB:
                 edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
                 service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stand still # speed, angle
-                input("END")
+                # input("END")
                 return TaskState.SUCCESS
 
 

@@ -22,7 +22,7 @@ class SEdge:
 	edge_update_interval = 0.0 # how many seconds between the edge sensor messages
 
 	# line detection levels
-	line_valid_threshold = 500 # 1000 is calibrated white
+	line_valid_threshold = 650 # 1000 is calibrated white
 	line_crossroad_valid_distance = 3 # How many sensors need to see line for it to be a crossroad
 	low_threshold = line_valid_threshold - 100
 
@@ -245,7 +245,7 @@ class SEdge:
 			self.on_crossroad = False
 		# is line valid (high above threshold)
 		self.on_line = self.line_valid_threshold <= high
-		# print(f"On line: {self.on_line} \tOn cross: {self.on_crossroad}")
+		# print(f"On line: {self.on_line} \tOn cross: {self.on_crossroad} \t{self.edge_n}")
 		# print(f"high: {self.high}, threshold: {self.lineValidThreshold}, over threshold: {self.lineValid}")
 
 		# find line position

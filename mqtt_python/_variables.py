@@ -61,21 +61,21 @@ node_connections = { # n : ((np, from, to),...)
 	0: ((1,S,E),),
 	1: ((0,E,S),(2,E+N,N),(4,E+S,N)),
 	2: ((1,N,W),(3,S,N),(6,E,W)),
-	3: ((2,N,S),(10,S,N)), # going downstairs: s(7,N+E,W)
+	3: ((2,N,S),(10,S,W)), # going downstairs: s(7,N+E,W)
 	4: ((1,N,E),(5,S,N),(8,E,W)),
 	5: ((4,N,S),(6,S,N),(100,E,W)),
 	6: ((5,N,S),(7,S,N)),
 	7: ((6,N,S),(10,S,N)), # < add 3 for going upstairs
 	8: (),
-	9: ((10,S,N),),
+	9: ((10,S,E),),
    10: ((3,S+W,S),(7,S+N,S),(9,S+E,S)),
    100:((4,S,N),) # task 8
 }
 
 class uniques:
 	map_speed = { # consistent order, use minmax
-    	# minmax(1,2): 0.35, 
-    	minmax(1,2): 0.20, # Temp for test 
+    	minmax(1,2): 0.25, 
+    	# minmax(1,2): 0.20, # Temp for test 
 		minmax(1,4): 0.20,
 		minmax(4,5): 0.20,
 		minmax(2,6): 0.15,
@@ -104,7 +104,7 @@ class uniques:
 		# minmax(1, 2) : (2.0, 0.0, 0.4)
 	}
 	delegate_task = {
-		# (0,1): [Task.EIGHT, Task.ROUNDABOUT],
+		(0,1): [Task.EIGHT, Task.ROUNDABOUT],
 		# (0,1): [Task.ROUNDABOUT],
 		(4,8): [Task.AXE, Task.GET_BALL, Task.DELIVER_BALL],
 		(5,100): [Task.EIGHT, Task.ROUNDABOUT],
