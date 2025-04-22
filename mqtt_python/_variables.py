@@ -40,8 +40,8 @@ class Task:
 	SEESAW     			 = Seesaw()
 	DELIVER_GOLF_BALL 	 = DeliverGolfBall()
 	RETRIEVE_LUGGAGE = RetrieveLuggage()
-	GET_LUGGAGE = NavigateToPose(target = PoseTarget.ARUCO_LD)
-	DELIVER_LUGGAGE = None
+	GET_LUGGAGE = NavigateToPose(target = PoseTarget.ARUCO_LA)
+	DELIVER_LUGGAGE = NavigateToDropOff()
 	
 
 ### ROBOT VALUES ###

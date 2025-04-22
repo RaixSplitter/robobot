@@ -56,10 +56,10 @@ class Target:
 		x, y, z = pose
 		self.x, self.y, self.z = x, y, z
 		self.angle = np.arctan2(x, z)
-		self.dist = np.sqrt(x**2 + z**2)
+		self.dist = np.sqrt(x**2 + z**2 + y**2)
 
-		if self.dist > MAX_TRAVEL_DISTANCE: # If distance is too large, the robot should finetune iteratively
-			self.dist /= 2
+		# if self.dist > MAX_TRAVEL_DISTANCE: # If distance is too large, the robot should finetune iteratively
+		# 	self.dist /= 2
 		print(f"Target Distance Set to {self.dist}")
   
 class NavigateToPose(Task):
@@ -69,8 +69,8 @@ class NavigateToPose(Task):
 		self.SPEED = 0.1
 		self.TURNRATE = 0.1
 		self.ANGLEMARGIN = 0.05
-		self.DISTMARGIN = 0.01
-		self.OFFSET = 0.16 #Offset 11cm
+		self.DISTMARGIN = 0.02
+		self.OFFSET = 0.18 #Offset 11cm
   
 		self.states_q : list[State] = []
 		self.state: State = State.LOOKING_FOR_OBJECT
@@ -187,7 +187,6 @@ class NavigateToPose(Task):
 	def reverse(self):
 		#Calculate missing distance
 		condition = abs(pose.tripB) >= abs(self.OFFSET - self.target.dist)
-		print(condition, pose.tripB, self.target.dist, self.OFFSET)
 		if condition:
 			self.stop()
 			self.change_state()
@@ -195,7 +194,10 @@ class NavigateToPose(Task):
 			self.drive(reverse = True)
 	
 	def capture(self):
-		service.send(service.topicCmd + "T0/servo", "1, 0 1") # Up position
+		service.send(service.topicCmd + "T0/servo", "1, 900 200") # Down position
+		service.send(service.topicCmd + "T0/svos", "0 901 200")
+		print('okokokok')
+		time.sleep(4)
 		self.finish = True
 		return 
 	
@@ -207,22 +209,24 @@ class NavigateToPose(Task):
   
 		# Get pose
 		if self.target.type == PoseTarget.BLUE_BALL:
-			poses = pose_est_ball_from_img(img, Ball_Color=Ball_Color.ORANGE)
+			poses = pose_est_ball_from_img(img, Ball_Color=Ball_Color.BLUE, show=True)
 			if not poses: #If no poses turnx
 				self.turn()
 				return
 			
 			self.target.set_pose(poses[0]) #Set target
-		if self.target.type == PoseTarget.ARUCO_LD:
+			
+		if self.target.type == PoseTarget.ARUCO_LA:
 			poses = get_pose(img, save_path="aruco_img.png")
 			print(poses)
-			poses = poses.get(53, None)
+			poses = poses.get(20, None)
 			if not poses:
 				self.turn()
 				return
 			rvec, tvec, identifier = poses
 			center_pos = drop_point(rvec, tvec, True, offset=-0.01, show = True, img = img)
-			self.target.set_pose(center_pos)
+			print("heya", identifier)
+			self.target.set_pose(tvec)
 
 	        
 			

@@ -1,48 +1,22 @@
-2025-04-19 18:48:16,604 modules.navigate_to_pose DEBUG State: State.TURN_RIGHT, State Queue: []
-2025-04-19 18:48:16,605 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(0.08957345835555017), y=np.float64(-0.0013490661603903563), z=np.float64(1.016513172252601), angle=np.float64(0.08789132663919086), dist=np.float64(0.5102260366261261))
-2025-04-19 18:48:18,068 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
-2025-04-19 18:48:18,069 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(0.08957345835555017), y=np.float64(-0.0013490661603903563), z=np.float64(1.016513172252601), angle=np.float64(0.08789132663919086), dist=np.float64(0.5102260366261261))
-2025-04-19 18:48:18,601 modules.navigate_to_pose DEBUG State: State.FORWARD, State Queue: []
-2025-04-19 18:48:18,603 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(0.00835935080663624), y=np.float64(-0.00206376705527135), z=np.float64(1.03070582716994), angle=np.float64(0.008110139002334534), dist=np.float64(0.5153698625521235))
-2025-04-19 18:48:22,224 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
-2025-04-19 18:48:22,224 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(0.00835935080663624), y=np.float64(-0.00206376705527135), z=np.float64(1.03070582716994), angle=np.float64(0.008110139002334534), dist=np.float64(0.5153698625521235))
-2025-04-19 18:48:22,611 modules.navigate_to_pose DEBUG State: State.TURN_RIGHT, State Queue: []
-2025-04-19 18:48:22,611 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(0.16890623154202206), y=np.float64(0.02537954552294644), z=np.float64(0.6091050324292471), angle=np.float64(0.2705053862575018), dist=np.float64(0.31604519280648824))
-2025-04-19 18:48:27,780 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
-2025-04-19 18:48:27,780 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(0.16890623154202206), y=np.float64(0.02537954552294644), z=np.float64(0.6091050324292471), angle=np.float64(0.2705053862575018), dist=np.float64(0.31604519280648824))
-2025-04-19 18:48:28,194 modules.navigate_to_pose DEBUG State: State.FORWARD, State Queue: []
-2025-04-19 18:48:28,194 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(0.013625576693377404), y=np.float64(0.02986934848792734), z=np.float64(0.6394623917653088), angle=np.float64(0.021304638572785223), dist=np.float64(0.3198037706244395))
-2025-04-19 18:48:29,878 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
-2025-04-19 18:48:29,879 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(0.013625576693377404), y=np.float64(0.02986934848792734), z=np.float64(0.6394623917653088), angle=np.float64(0.021304638572785223), dist=np.float64(0.3198037706244395))
-2025-04-19 18:48:30,408 modules.navigate_to_pose DEBUG State: State.FORWARD, State Queue: []
-2025-04-19 18:48:30,408 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(0.01917687103596496), y=np.float64(0.038609624497175955), z=np.float64(0.4381204678500657), angle=np.float64(0.043742850738462125), dist=np.float64(0.21926998012261648))
-2025-04-19 18:48:31,064 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
-2025-04-19 18:48:31,065 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(0.01917687103596496), y=np.float64(0.038609624497175955), z=np.float64(0.4381204678500657), angle=np.float64(0.043742850738462125), dist=np.float64(0.21926998012261648))
-2025-04-19 18:48:31,673 modules.navigate_to_pose DEBUG State: State.TURN_RIGHT, State Queue: []
-2025-04-19 18:48:31,673 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(0.04525075808953868), y=np.float64(0.04507204592107841), z=np.float64(0.35797735873700587), angle=np.float64(0.12573987147270926), dist=np.float64(0.3608260252199125))
-2025-04-19 18:48:34,382 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
-2025-04-19 18:48:34,382 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(0.04525075808953868), y=np.float64(0.04507204592107841), z=np.float64(0.35797735873700587), angle=np.float64(0.12573987147270926), dist=np.float64(0.3608260252199125))
-2025-04-19 18:48:34,808 modules.navigate_to_pose DEBUG State: State.FORWARD, State Queue: []
-2025-04-19 18:48:34,809 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(-0.00691416936374258), y=np.float64(0.045609452593216006), z=np.float64(0.36588815908869105), angle=np.float64(-0.018894698732544915), dist=np.float64(0.3659534816056568))
-2025-04-19 18:48:36,919 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
-2025-04-19 18:48:36,920 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(-0.00691416936374258), y=np.float64(0.045609452593216006), z=np.float64(0.36588815908869105), angle=np.float64(-0.018894698732544915), dist=np.float64(0.3659534816056568))
-2025-04-19 18:48:37,407 modules.navigate_to_pose DEBUG State: State.TURN_LEFT, State Queue: []
-2025-04-19 18:48:37,407 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(-0.026841093407164708), y=np.float64(0.051035671669788285), z=np.float64(0.14500851115903307), angle=np.float64(-0.18302857522652125), dist=np.float64(0.1474717349319915))
-2025-04-19 18:48:40,873 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
-2025-04-19 18:48:40,873 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(-0.026841093407164708), y=np.float64(0.051035671669788285), z=np.float64(0.14500851115903307), angle=np.float64(-0.18302857522652125), dist=np.float64(0.1474717349319915))
-2025-04-19 18:48:41,420 modules.navigate_to_pose DEBUG State: State.REVERSE, State Queue: []
-2025-04-19 18:48:41,421 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(0.0031633137104202283), y=np.float64(0.05031674694802404), z=np.float64(0.14126483885963317), angle=np.float64(0.02238904713161047), dist=np.float64(0.14130025212882197))
-2025-04-19 18:48:41,678 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
-2025-04-19 18:48:41,678 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(0.0031633137104202283), y=np.float64(0.05031674694802404), z=np.float64(0.14126483885963317), angle=np.float64(0.02238904713161047), dist=np.float64(0.14130025212882197))
-2025-04-19 18:48:42,203 modules.navigate_to_pose DEBUG State: State.FORWARD, State Queue: []
-2025-04-19 18:48:42,203 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(0.003364121046948336), y=np.float64(0.04812601936594973), z=np.float64(0.17212049282997002), angle=np.float64(0.019542662878514395), dist=np.float64(0.17215336581795396))
-2025-04-19 18:48:42,366 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
-2025-04-19 18:48:42,366 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(0.003364121046948336), y=np.float64(0.04812601936594973), z=np.float64(0.17212049282997002), angle=np.float64(0.019542662878514395), dist=np.float64(0.17215336581795396))
-2025-04-19 18:48:43,210 modules.navigate_to_pose DEBUG State: State.TURN_RIGHT, State Queue: []
-2025-04-19 18:48:43,210 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(0.014626878322675705), y=np.float64(0.04849150846403166), z=np.float64(0.16172856405394867), angle=np.float64(0.09019552314676481), dist=np.float64(0.16238865108257577))
-2025-04-19 18:48:45,074 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
-2025-04-19 18:48:45,074 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(0.014626878322675705), y=np.float64(0.04849150846403166), z=np.float64(0.16172856405394867), angle=np.float64(0.09019552314676481), dist=np.float64(0.16238865108257577))
-2025-04-19 18:48:45,603 modules.navigate_to_pose DEBUG State: State.TURN_LEFT, State Queue: []
-2025-04-19 18:48:45,604 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(-0.008817495516844765), y=np.float64(0.04835167060941825), z=np.float64(0.166000695809279), angle=np.float64(-0.053067348956239026), dist=np.float64(0.16623471128604386))
-2025-04-19 18:48:46,414 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
-2025-04-19 18:48:46,414 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.ARUCO_LD: 'LD'>, x=np.float64(-0.008817495516844765), y=np.float64(0.04835167060941825), z=np.float64(0.166000695809279), angle=np.float64(-0.053067348956239026), dist=np.float64(0.16623471128604386))
+2025-04-22 11:11:22,829 modules.navigate_to_pose DEBUG State: State.TURN_RIGHT, State Queue: []
+2025-04-22 11:11:22,830 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=np.float64(0.09170780869371033), y=np.float64(-0.14211121149059058), z=np.float64(0.5360795876439014), angle=np.float64(0.16943113939265073), dist=np.float64(0.5621274258521647))
+2025-04-22 11:11:27,298 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
+2025-04-22 11:11:27,298 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=np.float64(0.09170780869371033), y=np.float64(-0.14211121149059058), z=np.float64(0.5360795876439014), angle=np.float64(0.16943113939265073), dist=np.float64(0.5621274258521647))
+2025-04-22 11:11:27,817 modules.navigate_to_pose DEBUG State: State.FORWARD, State Queue: []
+2025-04-22 11:11:27,818 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=np.float64(0.002858784780424146), y=np.float64(-0.15893771447476082), z=np.float64(0.6030895360993891), angle=np.float64(0.004740197263392584), dist=np.float64(0.6236877089421097))
+2025-04-22 11:11:32,339 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
+2025-04-22 11:11:32,339 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=np.float64(0.002858784780424146), y=np.float64(-0.15893771447476082), z=np.float64(0.6030895360993891), angle=np.float64(0.004740197263392584), dist=np.float64(0.6236877089421097))
+2025-04-22 11:11:32,828 modules.navigate_to_pose DEBUG State: State.TURN_LEFT, State Queue: []
+2025-04-22 11:11:32,828 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=np.float64(-0.012185411629756868), y=np.float64(-0.0025890974834277434), z=np.float64(0.1743873357395824), angle=np.float64(-0.06976216099923717), dist=np.float64(0.17483172065936758))
+2025-04-22 11:11:34,689 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
+2025-04-22 11:11:34,690 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=np.float64(-0.012185411629756868), y=np.float64(-0.0025890974834277434), z=np.float64(0.1743873357395824), angle=np.float64(-0.06976216099923717), dist=np.float64(0.17483172065936758))
+2025-04-22 11:11:39,600 modules.navigate_to_drop_off DEBUG State: State.NAVIGATE_TO_CORNER, State Queue: []
+2025-04-22 11:11:39,602 modules.navigate_to_drop_off DEBUG State: State.TURN_RIGHT, State Queue: [<State.NAVIGATE_TO_CORNER: 'NAVIGATE_TO_CORNER'>]
+2025-04-22 11:11:51,850 modules.navigate_to_drop_off DEBUG State: State.NAVIGATE_TO_CORNER, State Queue: []
+2025-04-22 11:11:51,899 modules.navigate_to_drop_off DEBUG State: State.TURN_RIGHT, State Queue: [<State.NAVIGATE_TO_CORNER: 'NAVIGATE_TO_CORNER'>]
+2025-04-22 11:12:06,563 modules.navigate_to_drop_off DEBUG State: State.NAVIGATE_TO_CORNER, State Queue: []
+2025-04-22 11:12:06,613 modules.navigate_to_drop_off DEBUG State: State.TURN_RIGHT, State Queue: [<State.NAVIGATE_TO_CORNER: 'NAVIGATE_TO_CORNER'>]
+2025-04-22 11:12:19,570 modules.navigate_to_drop_off DEBUG State: State.NAVIGATE_TO_CORNER, State Queue: []
+2025-04-22 11:12:19,620 modules.navigate_to_drop_off DEBUG State: State.TURN_RIGHT, State Queue: [<State.NAVIGATE_TO_CORNER: 'NAVIGATE_TO_CORNER'>]
+2025-04-22 11:12:29,261 modules.navigate_to_drop_off DEBUG State: State.NAVIGATE_TO_CORNER, State Queue: []
+2025-04-22 11:12:29,312 modules.navigate_to_drop_off DEBUG State: State.TURN_RIGHT, State Queue: [<State.NAVIGATE_TO_CORNER: 'NAVIGATE_TO_CORNER'>]

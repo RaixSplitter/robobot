@@ -231,7 +231,7 @@ class NavigateToDropOff(Task):
 
 	def verify_position(self):
 		ok, img, imgTime = cam.getImage() # Get image
-		service.send(service.topicCmd + "T0/servo", "1 -901 200")
+		# service.send(service.topicCmd + "T0/servo", "1 -901 200")
 
 		# Get pose
 		poses = get_pose(img, "captured_image.jpg")
