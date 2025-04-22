@@ -27,7 +27,7 @@ class Eight(Task):
         # 'Parameters'
         self.pid_values = (0.9, 0.0, 0.5)
         self.move_speed = 0.25
-        self.line_target = 1.5 # -2...2 where on the line to follow, we want to lean left to hit crossroad
+        self.line_target = 0.5 # -2...2 where on the line to follow, we want to lean left to hit crossroad
         self.distance_to_hopper = 0.25 # m
         self.backing_distance   = 0.1 # m
         self.right_turn_angle = -3.1 # radians

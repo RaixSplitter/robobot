@@ -67,6 +67,17 @@ class Roundabout(Task):
     #       + (self.Kd * diff_error)
     #     # print(f"target:{target:.2f}, current:{current:.2f}, e:{error:.2f}, u:{u:.2f}, u1:{max(min(u, 1.0), -1.0):.2f}")
     #     return max(min(u, 0.35), -0.35)
+    
+    def drive(self, action, state : int, set_time : float | None = None, condition : bool = None):
+        # init time
+        if self.set_turn_time == None:
+            self.set_turn_time = time()
+            service.send(service.topicCmd + "ti/rc", action) # speed, angle # call once?
+        if condition or (set_time != None and (time() - self.set_turn_time) >= set_time):
+            state += 1
+            self.set_turn_time = None
+            service.send(service.topicCmd + "ti/rc", "0.0 0.0")
+        return state
 
     def get_to_pos(self):
         sensor_d = ir.ir[0]
@@ -77,52 +88,31 @@ class Roundabout(Task):
         
         # get into position
         elif self.pos_state == 0:
-            if self.set_turn_time == None:
-                self.set_turn_time = time()
-            if (time() - self.set_turn_time) >= 2.0:
-                self.pos_state += 1
-                self.set_turn_time = None
-            service.send(service.topicCmd + "ti/rc", "0.25 1.2") # turn # speed, angle
+            self.pos_state = self.drive("0.25 1.2", self.pos_state, set_time = 2.0)
         
         elif self.pos_state == 1: # drive straight, align to edge
-            if self.set_turn_time == None:
-                self.set_turn_time = time()
-            if (time() - self.set_turn_time) >= 5.5:
-                self.pos_state += 1
-                self.set_turn_time = None
-            service.send(service.topicCmd + "ti/rc", "0.15 0.0") # turn # speed, angle
+            self.pos_state = self.drive("0.15 0.0", self.pos_state, set_time = 5.5)
 
         elif self.pos_state == 2:
-            if self.set_turn_time == None:
-                self.set_turn_time = time()
-            if (time() - self.set_turn_time) >= 1.7:
-                self.pos_state += 1
-                self.set_turn_time = None
-                service.send(service.topicCmd + "ti/rc", "0.0 0.0")
-            service.send(service.topicCmd + "ti/rc", "0.1 -0.3") # turn # speed, angle
+            self.pos_state = self.drive("0.1 -0.3", self.pos_state, set_time = 1.7)
             
         elif self.pos_state == 3:
-            if self.set_turn_time == None:
-                self.set_turn_time = time()
-            if (time() - self.set_turn_time) >= 1.0 and sensor_d <= 0.4:
-                self.pos_state += 1
-                self.set_turn_time = None
-            service.send(service.topicCmd + "ti/rc", "0.0 -1.0") # turn # speed, angle
+            self.pos_state = self.drive("0.0 -1.0", self.pos_state, condition=(time() - self.set_turn_time) >= 1.0 and sensor_d <= 0.4)
+            # if self.set_turn_time == None:
+            #     self.set_turn_time = time()
+            # if (time() - self.set_turn_time) >= 1.0 and sensor_d <= 0.4:
+            #     self.pos_state += 1
+            #     self.set_turn_time = None
+            # service.send(service.topicCmd + "ti/rc", "0.0 -1.0") # turn # speed, angle
 
         elif self.pos_state == 4:
-            if self.set_turn_time == None:
-                self.set_turn_time = time()
-            if (time() - self.set_turn_time) >= 0.3: # 0.5 for do_a_circle
-                self.pos_state += 1
-                self.set_turn_time = None
-            service.send(service.topicCmd + "ti/rc", "0.0 1.0") # turn # speed, angle
+            self.pos_state = self.drive("0.0 1.0", self.pos_state, set_time = 0.3)
             
         elif self.pos_state == 5:
             # change job
             service.send(service.topicCmd + "ti/rc", "0.0 0.0")
-            pose.tripBreset()
-            self.saved_angle = pose.tripBh
-            # input("END")
+            # pose.tripBreset()
+            # self.saved_angle = pose.tripBh
             # self.job = self.do_a_circle
             self.job = self.do_a_const_circle
 
@@ -151,7 +141,7 @@ class Roundabout(Task):
         
         service.send(service.topicCmd + "ti/rc", action) # speed, angle
 
-    def do_a_simple_circle(self):
+    def do_a_simpler_circle(self):
         self.check_if_out()
         minv = 0.15
         maxv = 1.30
