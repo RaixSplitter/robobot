@@ -69,6 +69,7 @@ class NavigateToDropOff(Task):
         self.ANGLEMARGIN = 0.05
         self.DISTMARGIN = 0.01
         self.OFFSET = 0.0 #Offset 11cm
+        self.DELIVERY_OFFSET = 0.08
 
         self.states_q : list[State] = []
         self.state: State = State.VERIFY_POSITION
@@ -147,7 +148,7 @@ class NavigateToDropOff(Task):
    
 
     def turn_left(self):
-        self.stop()
+        # self.stop() # for better acc
         if pose.tripBh >= -self.target.angle: # If done turning
             self.stop()
             self.change_state()
@@ -155,7 +156,7 @@ class NavigateToDropOff(Task):
             self.turn(left=True) # Turn right
     
     def turn_right(self):
-        self.stop()
+        # self.stop() # for better acc
         
         if pose.tripBh <= -self.target.angle: # If done turning
             self.stop()
@@ -227,7 +228,7 @@ class NavigateToDropOff(Task):
         elif not self.has_droven(): #Examine if robot needs to drive to target or backoff
             self.drive_to_target()
             self.add_state()
-            self.add_state(State.NAVIGATE_TO_CORNER)		
+            self.add_state(State.NAVIGATE_TO_CORNER)
             self.change_state()
             return
         
@@ -252,7 +253,14 @@ class NavigateToDropOff(Task):
         for key, value in poses.items():
             if ARUCO_MAP[key][0] == self.target.type: #If target found
                 rvec, tvec, identifier = value
-                drop_pos = drop_point(rvec, tvec, delivery=True, offset=0.8, show = True, img = img)
+                drop_pos = drop_point(rvec, tvec, delivery=True, offset= self.DELIVERY_OFFSET, show = True, img = img)
+                
+                if self.target.dist <= self.DELIVERY_OFFSET and self.target.angle <= self.ANGLEMARGIN:
+                    self.add_state(State.DELIVER)
+                    self.change_state()
+                    LOGGER.info('DELIVERING PACKAGE')
+                    return
+                
                 self.target.set_pose(drop_pos)
                 self.add_state(State.NAVIGATE_TO_CORNER)
                 self.has_turned = False
