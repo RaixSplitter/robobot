@@ -40,6 +40,7 @@ class State(Enum):
     FORWARD 				    = 'FORWARD SOLDIER'
     REVERSE				    	= 'MOONWALKING'
     DELIVER 				    = 'PIZZADELIVERY'
+    REVERSE2TRACK				= 'Reverse back on track'
 
 @dataclass
 class Target:
@@ -70,6 +71,7 @@ class NavigateToDropOff(Task):
         self.DISTMARGIN = 0.01
         self.OFFSET = -0.6 #Offset 11cm
         self.DELIVERY_OFFSET = 0.10
+        self.REVERSE2TRACK_DIST = 0.6
 
         self.states_q : list[State] = []
         self.state: State = State.VERIFY_POSITION
@@ -90,6 +92,7 @@ class NavigateToDropOff(Task):
             State.FORWARD 				    : self.forward,
             State.REVERSE				    : self.reverse,
             State.DELIVER 				    : self.deliver,
+            State.REVERSE2TRACK				: self.reverse2track
         }
     
     #region helper functions
@@ -213,16 +216,31 @@ class NavigateToDropOff(Task):
     
     def deliver(self):
         service.send(service.topicCmd + "T0/servo", "1, -900 1") # Up position
-        # self.finish = True
+        time.sleep(2)
+        pose.tripBreset()
+        self.add_state(State.REVERSE2TRACK)
+        self.change_state()
         return 
         #endregion
+        
+    def reverse2track(self):
+        condition = abs(pose.tripB) >= abs(self.reverse2track)
+        print(condition, pose.tripB, self.reverse2track)
+        if condition:
+            self.stop()
+            self.finish = True
+            self.change_state()
+        else:
+            self.drive(reverse = True)
+        
+        
   
     def navigate_to_corner(self):
         if not self.has_turned: #Examine if robot needs to turn towards target
             self.turn_to_target()
             self.add_state(State.NAVIGATE_TO_CORNER)
             self.change_state()
-            return		
+            return
 
         # VALIDATION STEP 2 DRIVE
         elif not self.has_droven: #Examine if robot needs to drive to target or backoff
