@@ -24,6 +24,10 @@ from _variables import State, default_params, Task
 MAX_TASK_TIME = 200
 
 
+
+MAX_TASK_TIME = 200
+
+
 all_poses = []
 
 # set title of process, so that it is not just called Python
