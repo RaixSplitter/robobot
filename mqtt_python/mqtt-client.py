@@ -27,7 +27,7 @@ setproctitle("mqtt-client")
 params = default_params
 robo_map = master_map(
 	# path = [2,6,10,3], 
-	path = [100], 
+	path = [100,8], 
 	turn = { 0:None, 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT }, 
 	robot_param = params
 )
@@ -109,7 +109,7 @@ def loop():
 				pose.tripBreset()
 				is_turning = True
 			edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
-			service.send(service.topicCmd + "ti/rc", "0.0 0.8") # turn left # speed, angle
+			service.send(service.topicCmd + "ti/rc", f"{params['turn_speed']} 0.8") # turn left # speed, angle
 			if abs(pose.tripBh) >= params["turn_angle"]:
 				state = State.FOLLOW_LINE
 				is_turning = False
@@ -119,7 +119,7 @@ def loop():
 				pose.tripBreset()
 				is_turning = True
 			edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
-			service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn right # speed, angle
+			service.send(service.topicCmd + "ti/rc", f"{params['turn_speed']} -0.8") # turn right # speed, angle
 			if abs(pose.tripBh) >= params["turn_angle"]:
 				state = State.FOLLOW_LINE
 				is_turning = False

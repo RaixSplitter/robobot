@@ -11,15 +11,16 @@ class Eight(Task):
         super().__init__(name='eight')
         self.action_start_time = None
         
-        self.has_initted = False
-        self.toppling_hopper = False
-        self.turning_right = False
+        self.has_initted           = False
+        self.toppling_hopper       = False
+        self.backing               = False
+        self.turning_right         = False
         self.driving_into_position = False
-        self.found_robot = False
-        self.waiting_for_ir = False
-        self.follow_line = False
-        self.waiting_for_ir_again = False
-        self.follow_line_again = False
+        self.found_robot           = False
+        self.waiting_for_ir        = False
+        self.follow_line           = False
+        self.waiting_for_ir_again  = False
+        self.follow_line_again     = False
         
         self.trip_can_be_reset = True
         
@@ -28,9 +29,10 @@ class Eight(Task):
         self.move_speed = 0.25
         self.line_target = 1.5 # -2...2 where on the line to follow, we want to lean left to hit crossroad
         self.distance_to_hopper = 0.25 # m
-        self.right_turn_angle = -3.0 # radians
-        self.distance_to_eight = 0.8 + self.distance_to_hopper # m
-        self.distances_to_drive_eight = [1.5, 0.9] # m, before and after waiting
+        self.backing_distance   = 0.1 # m
+        self.right_turn_angle = -3.1 # radians
+        self.distance_to_eight = 0.6 + self.distance_to_hopper - self.backing_distance# m
+        self.distances_to_drive_eight = [1.5, 1.3] # m, before and after waiting
         self.wait_times = [3.0, 3.0] # seconds 
         self.detect_robot_distance = 0.3 # meters
 
@@ -38,6 +40,7 @@ class Eight(Task):
         """
         Sorry about this function. The flow is:
         - Drive forward to hit the hopper
+        - Back a bit
         - Turn around
         - Drive forward to align us the 8
         - Wait for robot to pass
@@ -49,21 +52,27 @@ class Eight(Task):
             pose.tripBreset()
             self.has_initted = True
             self.toppling_hopper = True
+            service.send(service.topicCmd + "T0/servo", "1, -500 200") # Medium position
 
         if self.toppling_hopper:
             # print("Toppling hopper")
-            service.send(service.topicCmd + "T0/servo", "1, -500 200") # Medium position
             service.send(service.topicCmd + "ti/rc", "0.3 0.0") # drive forward # speed, angle
-
             if pose.tripB >= self.distance_to_hopper:
-                service.send(service.topicCmd + "T0/servo", "1, -1000 200") # Up position
+                service.send(service.topicCmd + "T0/servo", "1 -1000 200") # Up position
                 service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
                 self.toppling_hopper = False
-                self.turning_right = True
+                self.backing = True
 
+        if self.backing:
+            # print("Backing")
+            edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
+            service.send(service.topicCmd + "ti/rc", "-0.2 0.0") # turn right # speed, angle
+            if pose.tripB <= self.distance_to_hopper - self.backing_distance:
+                self.backing = False
+                self.turning_right = True
+                
         if self.turning_right:
             # print("Turning right")
-            edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
             service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn right # speed, angle
             if pose.tripBh <= self.right_turn_angle:
                 self.turning_right = False
@@ -136,6 +145,9 @@ class Eight(Task):
                 target_position=self.line_target # follow the left edge of the line to assure we take the right turn in the 8
             )
             if self.distances_to_drive_eight[1] < pose.tripB:
+                edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
+                service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stand still # speed, angle
+                input("END")
                 return TaskState.SUCCESS
 
 

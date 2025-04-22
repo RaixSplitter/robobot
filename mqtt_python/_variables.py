@@ -42,7 +42,8 @@ class Task:
 # speed        | 0.1 | 0.2 | 0.3
 # 180 deg turn | 4.5 | 4.0 | 4.2
 default_params = {
-	"turn_angle": pi/2, 				# how long does a normal left or right turn take in seconds
+	"turn_angle": pi/2, 			# how long does a normal left or right turn take in seconds
+	"turn_speed": 0,				# should it drive as it turns | 0 = no driving
 	"move_speed": 0.30, 			# max 1
 	"skip_cross": 0,				# number of crossroads that are skipped (E1-4, E6-7)
 	"pid_values": (0.6, 0.0, 0.4), 	# p, i, d
@@ -62,13 +63,13 @@ node_connections = { # n : ((np, from, to),...)
 	8: (),
 	9: ((10,S,N),),
    10: ((3,S+W,S),(7,S+N,S),(9,S+E,S)),
-   100:((4,S,N)) # task 8
+   100:((4,S,N),) # task 8
 }
 
 class uniques:
 	map_speed = { # consistent order, use minmax
     	minmax(1,2): 0.35, 
-		minmax(1,4): 0.15,
+		minmax(1,4): 0.20,
 		minmax(4,5): 0.20,
 		minmax(2,6): 0.15,
 	}
@@ -77,6 +78,9 @@ class uniques:
 		(0,1,2): pi/5, 
 		(7,10,3): 3*pi/4, 
 		(7,10,9): 3*pi/4, 
+	}
+	map_turn_speed = {
+		minmax(1,4): 0.2
 	}
 	limits = {
 		# minmax(1,2)   : 1,
@@ -91,7 +95,7 @@ class uniques:
 		# minmax(1, 2) : (2.0, 0.0, 0.4)
 	}
 	delegate_task = {
-		(0,1): [Task.EIGHT, Task.ROUNDABOUT],
+		# (0,1): [Task.EIGHT, Task.ROUNDABOUT],
 		# (0,1): [Task.ROUNDABOUT],
 		(4,8): [Task.AXE, Task.NAVIGATE_TO_POSE, Task.NAVIGATE_TO_DROP_OFF],
 		(5,100): [Task.EIGHT, Task.ROUNDABOUT],

@@ -1,5 +1,5 @@
-from _variables import N,E,S,W, deg, minmax, node_connections, uniques, default_params
 from __future__ import annotations
+from _variables import N,E,S,W, deg, minmax, node_connections, uniques, default_params
 
 ### Main ###
 class master_map:
@@ -88,6 +88,7 @@ class master_map:
         direction = minmax(current_n, next_n)
         self.robot_param["move_speed"] = self.uniques.map_speed.get(direction,                 self.default_param["move_speed"])
         self.robot_param["turn_angle"] = self.uniques.map_turn.get((prev_n,current_n, next_n), self.default_param["turn_angle"])
+        self.robot_param["turn_speed"] = self.uniques.map_turn_speed.get(direction,            self.default_param["turn_speed"])
         self.robot_param["skip_cross"] = self.uniques.cross_skip.get(direction,                self.default_param["skip_cross"])
         self.robot_param["pid_values"] = self.uniques.pid_values.get(direction,                self.default_param["pid_values"])
         self.robot_param["task_list" ] = self.uniques.delegate_task.get((current_n,next_n),    self.default_param["task_list" ])
