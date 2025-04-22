@@ -95,7 +95,7 @@ def loop():
 					state = State.LOST
 			
 			# If we are at a crossroad, change node
-			if edge.on_crossroad and 5.0 < time.time() - last_crossroad_time:
+			if edge.on_crossroad and 1.0 < time.time() - last_crossroad_time:
 				last_crossroad_time = time.time()
 				if params["skip_cross"] > 0:
 					print("Skipped crossroad",params["skip_cross"])
