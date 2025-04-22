@@ -68,7 +68,7 @@ class NavigateToDropOff(Task):
         self.TURNRATE = 0.1
         self.ANGLEMARGIN = 0.05
         self.DISTMARGIN = 0.01
-        self.OFFSET = 0.0 #Offset 11cm
+        self.OFFSET = -0.6 #Offset 11cm
         self.DELIVERY_OFFSET = 0.08
 
         self.states_q : list[State] = []
@@ -79,6 +79,7 @@ class NavigateToDropOff(Task):
         self.finish = False
         self.has_turned = False
         self.has_droven = False
+        self.has_reached_center = False
   
         self.actions = {
             State.VERIFY_POSITION 		    : self.verify_position,
@@ -122,7 +123,6 @@ class NavigateToDropOff(Task):
     def turn_to_target(self):
         pose.tripBreset()
         self.has_turned = True
-        self.has_droven = True
         if self.target.angle <= -self.ANGLEMARGIN: #If angle is less than margin
             self.add_state(State.TURN_LEFT)
             return False
@@ -134,7 +134,6 @@ class NavigateToDropOff(Task):
 
     def drive_to_target(self):
         pose.tripBreset()
-        self.has_turned = True
         self.has_droven = True
         
         if self.target.dist - self.OFFSET <= -self.DISTMARGIN:
@@ -153,7 +152,7 @@ class NavigateToDropOff(Task):
             self.stop()
             self.change_state()
         else:
-            self.turn(left=True) # Turn right
+            self.turn(left=True) #Turn Left 
     
     def turn_right(self):
         # self.stop() # for better acc
@@ -219,13 +218,13 @@ class NavigateToDropOff(Task):
         #endregion
   
     def navigate_to_corner(self):
-        if not self.has_turned(): #Examine if robot needs to turn towards target
+        if not self.has_turned: #Examine if robot needs to turn towards target
             self.turn_to_target()
             self.add_state(State.NAVIGATE_TO_CORNER)
             return		
 
         # VALIDATION STEP 2 DRIVE
-        elif not self.has_droven(): #Examine if robot needs to drive to target or backoff
+        elif not self.has_droven: #Examine if robot needs to drive to target or backoff
             self.drive_to_target()
             self.add_state()
             self.add_state(State.NAVIGATE_TO_CORNER)
@@ -265,32 +264,37 @@ class NavigateToDropOff(Task):
                 self.add_state(State.NAVIGATE_TO_CORNER)
                 self.has_turned = False
                 self.has_droven = False
+                self.has_reached_center = True
                 self.change_state()
                 LOGGER.info('FOUND TARGET')
                 return
 
         if not poses: #If no poses turn
-            self.turn()
+            if self.has_reached_center:
+                self.turn(left = False)
+            else: self.turn()
             return
         elif len(poses) == 1:
             rvec, tvec, identifier = list(poses.values())[0]
-            drop_pos = drop_point(rvec, tvec, delivery=False, offset=0.3, show = True, img = img)
+            drop_pos = drop_point(rvec, tvec, delivery=False, offset=-0.5, show = True, img = img)
             self.target.set_pose(drop_pos)
             LOGGER.info('NO TARGET FOUND GOING TO NEXT CORNER', identifier)
             self.add_state(State.NAVIGATE_TO_CORNER)
             self.has_turned = False
             self.has_droven = False
+            self.has_reached_center = True
             self.change_state()
             return
         else: #If multiple poses, get the pose with the rightmost translation vector
             # Get the pose with the largest x value
             target_pose = max(poses.values(), key=lambda x: x[1][0][0])
             rvec, tvec, identifier = target_pose
-            drop_pos = drop_point(rvec, tvec, delivery=False, offset=0.3, show = True, img = img)
+            drop_pos = drop_point(rvec, tvec, delivery=False, offset=-0.5, show = True, img = img)
             self.target.set_pose(drop_pos)
             LOGGER.info('NO TARGET FOUND GOING TO NEXT CORNER M2', identifier)
             self.add_state(State.NAVIGATE_TO_CORNER)
             self.has_turned = False
             self.has_droven = False
+            self.has_reached_center = True
             self.change_state()
             return

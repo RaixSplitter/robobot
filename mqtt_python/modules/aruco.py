@@ -18,13 +18,13 @@ ARUCO_DICT = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
 ARUCO_MAP = {
 	# Sorting Center, MARKERSIZE 10 CM, 0.1 M
 	10: ("A", 0.1),
-	11: ("A", 0.1),
+	11: ("AR", 0.1),
 	12: ("B", 0.1),
-	13: ("B", 0.1),
+	13: ("BR", 0.1),
 	14: ("C", 0.1),
-	15: ("C", 0.1),
+	15: ("CR", 0.1),
 	16: ("D", 0.1),
-	17: ("D", 0.1),
+	17: ("DR", 0.1),
 	# Luggage, MARKERSIZE 4 CM, 0.04 M
 	5: ("car", 0.035),  # 0.35
 	20: ("LA", 0.035),
@@ -73,10 +73,11 @@ def get_pose(img, save_path=None) -> dict:
 	for _id, _corners in zip(ids, corners):
 		
 		identifier, _marker_size = ARUCO_MAP.get(_id[0], (None, None))
-		print(_id, identifier, _marker_size)
 		# assert identifier
 		# assert _marker_size
 		
+		if not identifier:
+			pass
 		_marker_points = get_marker_points(_marker_size)
 		
 		ret, rvec, tvec = cv2.solvePnP(_marker_points, _corners, MTX, DIST)
