@@ -76,6 +76,7 @@ class NavigateToDropOff(Task):
 		self.target = Target(target)
 		self.delivery = False
 		self.finish = False
+  
 		self.actions = {
 			State.VERIFY_POSITION 		    : self.verify_position,
 			State.NAVIGATE_TO_CORNER 		: self.navigate_to_corner,
@@ -100,6 +101,7 @@ class NavigateToDropOff(Task):
 			return TaskState.FAILURE
 	  
 		return TaskState.EXECUTING
+
 	def change_state(self) -> None:
 		if self.states_q: #Get next state
 			self.state = self.states_q.pop(0)
@@ -244,6 +246,7 @@ class NavigateToDropOff(Task):
 				drop_pos = drop_point(rvec, tvec, delivery=True, offset=0.8, show = True, img = img)
 				self.target.set_pose(drop_pos)
 				self.add_state(State.NAVIGATE_TO_CORNER)
+				self.change_state()
 				LOGGER.info('FOUND TARGET')
 				return
 
