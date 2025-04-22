@@ -218,6 +218,14 @@ class NavigateToPose(Task):
 			
 			self.target.set_pose(poses[0]) #Set target
 			
+		if self.target.type == PoseTarget.ORANGE_BALL:
+			poses = pose_est_ball_from_img(img, Ball_Color=Ball_Color.ORANGE, show=True)
+			if not poses: #If no poses turnx
+				self.turn()
+				return
+			
+			self.target.set_pose(poses[0]) #Set target
+			
 		if self.target.type == PoseTarget.ARUCO_LD:
 			poses = get_pose(img, save_path="aruco_img.png")
 			print(poses)
