@@ -62,7 +62,7 @@ node_connections = { # n : ((np, from, to),...)
 	8: (),
 	9: ((10,S,N),),
    10: ((3,S+W,S),(7,S+N,S),(9,S+E,S)),
-   100:() # task 8
+   100:((4,S,N)) # task 8
 }
 
 class uniques:
@@ -79,8 +79,9 @@ class uniques:
 		(7,10,9): 3*pi/4, 
 	}
 	limits = {
-		# minmax(1,2) : 1,
-		minmax(2,6) : 1,
+		# minmax(1,2)   : 1,
+		minmax(2,6)   : 1,
+		minmax(5,100) : 1,
 	}
 	cross_skip = { # consistent order, use minmax
 		minmax(1,4) : 1,
@@ -90,8 +91,8 @@ class uniques:
 		# minmax(1, 2) : (2.0, 0.0, 0.4)
 	}
 	delegate_task = {
-		# (0,1): [Task.EIGHT, Task.ROUNDABOUT],
-		(0,1): [Task.ROUNDABOUT],
+		(0,1): [Task.EIGHT, Task.ROUNDABOUT],
+		# (0,1): [Task.ROUNDABOUT],
 		(4,8): [Task.AXE, Task.NAVIGATE_TO_POSE, Task.NAVIGATE_TO_DROP_OFF],
 		(5,100): [Task.EIGHT, Task.ROUNDABOUT],
 		(2,6): [Task.SEESAW,],

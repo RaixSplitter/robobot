@@ -1,5 +1,5 @@
 from _variables import N,E,S,W, deg, minmax, node_connections, uniques, default_params
-
+from __future__ import annotations
 
 ### Main ###
 class master_map:
@@ -101,7 +101,7 @@ class master_map:
     def change_node(self, node_idx, new_node): # for custom path nodes
         self.nodes[node_idx] = new_node
     
-class path_node: pass # for type options
+
 class path_node:
     def __init__(self, n : int):      
         self.n = n
