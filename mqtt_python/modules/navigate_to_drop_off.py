@@ -64,12 +64,12 @@ class NavigateToDropOff(Task):
     def __init__(self, target : PoseTarget = PoseTarget.A):
         super().__init__(name="Navigate")
 
-        self.SPEED = 0.1
-        self.TURNRATE = 0.1
+        self.SPEED = 0.3
+        self.TURNRATE = 0.5
         self.ANGLEMARGIN = 0.05
         self.DISTMARGIN = 0.01
         self.OFFSET = -0.6 #Offset 11cm
-        self.DELIVERY_OFFSET = 0.08
+        self.DELIVERY_OFFSET = 0.10
 
         self.states_q : list[State] = []
         self.state: State = State.VERIFY_POSITION
@@ -221,12 +221,12 @@ class NavigateToDropOff(Task):
         if not self.has_turned: #Examine if robot needs to turn towards target
             self.turn_to_target()
             self.add_state(State.NAVIGATE_TO_CORNER)
+            self.change_state()
             return		
 
         # VALIDATION STEP 2 DRIVE
         elif not self.has_droven: #Examine if robot needs to drive to target or backoff
             self.drive_to_target()
-            self.add_state()
             self.add_state(State.NAVIGATE_TO_CORNER)
             self.change_state()
             return
@@ -250,21 +250,15 @@ class NavigateToDropOff(Task):
         poses = {key: value for key, value in poses.items() if ARUCO_MAP[key][0] in {'A', 'B', 'C', 'D'}}
         print(poses, self.target.type.value)
         for key, value in poses.items():
-            if ARUCO_MAP[key][0] == self.target.type: #If target found
+            if ARUCO_MAP[key][0] == self.target.type.value: #If target found
                 rvec, tvec, identifier = value
                 drop_pos = drop_point(rvec, tvec, delivery=True, offset= self.DELIVERY_OFFSET, show = True, img = img)
-                
-                if self.target.dist <= self.DELIVERY_OFFSET and self.target.angle <= self.ANGLEMARGIN:
-                    self.add_state(State.DELIVER)
-                    self.change_state()
-                    LOGGER.info('DELIVERING PACKAGE')
-                    return
-                
                 self.target.set_pose(drop_pos)
                 self.add_state(State.NAVIGATE_TO_CORNER)
                 self.has_turned = False
                 self.has_droven = False
                 self.has_reached_center = True
+                self.delivery = True
                 self.change_state()
                 LOGGER.info('FOUND TARGET')
                 return
