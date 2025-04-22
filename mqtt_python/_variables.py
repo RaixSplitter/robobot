@@ -5,7 +5,6 @@ from modules.eight import Eight
 from modules.roundabout_s import Roundabout
 from modules.navigate_to_pose import NavigateToPose
 from modules.navigate_to_drop_off import NavigateToDropOff
-from modules.roundabout import Roundabout
 from modules.navigate_to_pose import NavigateToPose, PoseTarget
 from modules.luggage import RetrieveLuggage
 from modules.ball_detection import pose_est_ball_from_img
@@ -32,17 +31,16 @@ class State(Enum):
 
 ### TASK ###
 class Task:
-	AXE         		 = Axe()
-	EIGHT       		 = Eight()
-	ROUNDABOUT  		 = Roundabout()
-	NAVIGATE_TO_POSE   	 = NavigateToPose()
-	NAVIGATE_TO_DROP_OFF = NavigateToDropOff()
-	SEESAW     			 = Seesaw()
-	DELIVER_GOLF_BALL 	 = DeliverGolfBall()
-	RETRIEVE_LUGGAGE = RetrieveLuggage()
-	GET_LUGGAGE = NavigateToPose(target = PoseTarget.ARUCO_LD)
-	DELIVER_LUGGAGE = NavigateToDropOff(target=PoseTarget.D)
-	DELIVER_BALL = NavigateToDropOff(target=PoseTarget.C)
+	AXE         		= Axe()
+	EIGHT       		= Eight()
+	ROUNDABOUT  		= Roundabout()
+	SEESAW     			= Seesaw()
+	DELIVER_GOLF_BALL 	= DeliverGolfBall()
+	RETRIEVE_LUGGAGE  	= RetrieveLuggage()
+	GET_LUGGAGE       	= NavigateToPose(target = PoseTarget.ARUCO_LD)
+	DELIVER_LUGGAGE 	= NavigateToDropOff(target = PoseTarget.D)
+	GET_BALL		   	= NavigateToPose(target = PoseTarget.BLUE_BALL)
+	DELIVER_BALL 		= NavigateToDropOff(target = PoseTarget.C)
 	
 
 ### ROBOT VALUES ###
@@ -84,11 +82,13 @@ class uniques:
 	map_turn = { 
 		(0,1,4): pi/5, 
 		(0,1,2): pi/5, 
+		# (2,3,10): pi/4,
 		(7,10,3): 3*pi/4, 
 		(7,10,9): 3*pi/4, 
 	}
 	map_turn_speed = {
-		minmax(1,4): 0.2
+		minmax(1,2): 0.2,
+		minmax(1,4): 0.2,
 	}
 	limits = {
 		# minmax(1,2)   : 1,
@@ -105,8 +105,7 @@ class uniques:
 	delegate_task = {
 		# (0,1): [Task.EIGHT, Task.ROUNDABOUT],
 		# (0,1): [Task.ROUNDABOUT],
-		(4,8): [Task.AXE, Task.NAVIGATE_TO_POSE, Task.NAVIGATE_TO_DROP_OFF],
+		(4,8): [Task.AXE, Task.GET_BALL, Task.DELIVER_BALL],
 		(5,100): [Task.EIGHT, Task.ROUNDABOUT],
 		(2,6): [Task.SEESAW,],
 	}
-# TODO: destroy path 2,6 once run

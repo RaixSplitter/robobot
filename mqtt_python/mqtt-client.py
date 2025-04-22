@@ -18,7 +18,7 @@ from ulog import flog
 
 from map import master_map
 from modules.task import TaskState
-from _variables import State, default_params, Task
+from _variables import State, default_params, Task, N,E,S,W
 
 
 
@@ -32,15 +32,16 @@ setproctitle("mqtt-client")
 params = default_params
 robo_map = master_map(
 	# path = [2,6,10,3], 
-	path = [100,8], 
-	turn = { 0:None, 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT }, 
-	robot_param = params
+	path = [3,10,7,4,8], 
+	turn = { 0:"U-TURN-NOT-IMPLEMENTED", 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT }, 
+	robot_param = params,
+    # init_node=(1,S) 
 )
 
 
 def loop(): 
 	state = State.START
-	#state = State.TESTING
+	# state = State.TESTING
 	prev_state = None
 	n_frames = 0
 	n_frames_lost = 0
@@ -188,7 +189,7 @@ def loop():
 
 		# NOTE: This state is the catch all for any misc testing code
 		elif state == State.TESTING:
-			print("Kartoffelmel")
+			# print("Kartoffelmel")
 			#params['current_task'] = Task.RETRIEVE_LUGGAGE
 			#state = State.SOLVING_TASK
 			# service.send(service.topicCmd + "T0/servo", "1 -900 0.8")
