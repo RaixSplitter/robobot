@@ -41,7 +41,7 @@ class Task:
 	DELIVER_GOLF_BALL 	 = DeliverGolfBall()
 	RETRIEVE_LUGGAGE = RetrieveLuggage()
 	GET_LUGGAGE = NavigateToPose(target = PoseTarget.ARUCO_LD)
-	DELIVER_LUGGAGE = NavigateToDropOff()
+	DELIVER_LUGGAGE = NavigateToDropOff(target=PoseTarget.D)
 	DELIVER_BALL = NavigateToDropOff(target=PoseTarget.C)
 	
 

@@ -77,7 +77,7 @@ def get_pose(img, save_path=None) -> dict:
 		# assert _marker_size
 		
 		if not identifier:
-			pass
+			continue
 		_marker_points = get_marker_points(_marker_size)
 		
 		ret, rvec, tvec = cv2.solvePnP(_marker_points, _corners, MTX, DIST)
