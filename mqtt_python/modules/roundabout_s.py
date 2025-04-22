@@ -81,6 +81,7 @@ class Roundabout(Task):
 
     def get_to_pos(self):
         sensor_d = ir.ir[0]
+        print("Running")
         if self.pos_state == -1:
             print("This Pos")
             input()
