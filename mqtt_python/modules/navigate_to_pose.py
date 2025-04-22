@@ -69,8 +69,9 @@ class NavigateToPose(Task):
 		self.SPEED = 0.1
 		self.TURNRATE = 0.1
 		self.ANGLEMARGIN = 0.05
-		self.DISTMARGIN = 0.02
-		self.OFFSET = 0.18 #Offset 11cm
+		self.DISTMARGIN = 0.01
+		self.OFFSET_BALL = 0.16
+		self.OFFSET = 0.2 #Offset 11cm
   
 		self.states_q : list[State] = []
 		self.state: State = State.LOOKING_FOR_OBJECT
@@ -194,8 +195,8 @@ class NavigateToPose(Task):
 			self.drive(reverse = True)
 	
 	def capture(self):
-		service.send(service.topicCmd + "T0/servo", "1, 900 200") # Down position
-		service.send(service.topicCmd + "T0/svos", "0 901 200")
+		service.send(service.topicCmd + "T0/servo", "1 400 200") # Down position
+		# service.send(service.topicCmd + "T0/svos", "0 901 200")
 		print('okokokok')
 		time.sleep(4)
 		self.finish = True
@@ -204,7 +205,7 @@ class NavigateToPose(Task):
 	def get_pose(self) -> bool:
 	 
 		ok, img, imgTime = cam.getImage() # Get image
-		service.send(service.topicCmd + "T0/servo", "1 -901 200")
+		service.send(service.topicCmd + "T0/servo", "1 -1023 200")
 
   
 		# Get pose
@@ -216,17 +217,17 @@ class NavigateToPose(Task):
 			
 			self.target.set_pose(poses[0]) #Set target
 			
-		if self.target.type == PoseTarget.ARUCO_LA:
+		if self.target.type == PoseTarget.ARUCO_LD:
 			poses = get_pose(img, save_path="aruco_img.png")
 			print(poses)
-			poses = poses.get(20, None)
+			poses = poses.get(53, None)
 			if not poses:
 				self.turn()
 				return
 			rvec, tvec, identifier = poses
-			center_pos = drop_point(rvec, tvec, True, offset=-0.01, show = True, img = img)
+			center_pos = drop_point(rvec, tvec, True, offset=-0.03, show = True, img = img)
 			print("heya", identifier)
-			self.target.set_pose(tvec)
+			self.target.set_pose(center_pos)
 
 	        
 			
