@@ -31,18 +31,19 @@ all_poses = []
 setproctitle("mqtt-client")
 params = default_params
 robo_map = master_map(
-	path = [2,6,10,3], 
-	# path = [3,10,7,4,8], 
+    # path = [8,],
+	# path = [2,6,10,3], 
+	path = [3,10,7,4,8], 
 	turn = { 0:"U-TURN-NOT-IMPLEMENTED", 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT }, 
 	robot_param = params,
-    # init_node=(1,S) 
+    # init_node=(1,S) ###TESTING
 )
 
 
 def loop(): 
-	# state = State.START
+	state = State.START
 	# state = State.TESTING
-	state = State.PHOTO_MODE
+	# state = State.PHOTO_MODE
 	prev_state = None
 	n_frames = 0
 	n_frames_lost = 0
@@ -80,7 +81,7 @@ def loop():
 
 		if state == State.START:
 			start = gpio.start() or service.args.now
-			start = True # NOTE: Temporary overwrite to not need to press button
+			# start = True # NOTE: Temporary overwrite to not need to press button
 			
 			if start:
 				state = robo_map.robot_state

@@ -7,15 +7,13 @@ from sedge import edge
 from spose import pose
 from uservice import service
 
-FPS = 20 # this is set in mqtt, we lock at 20 fps
-
 class DeliverGolfBall(Task):
 	def __init__(self):
 		"""
 		We assume that this state is called from 'node 10' in Sonny's map and the arm is down and has a ball
 		""" 
 		super().__init__(name='deliver_golf_ball')
-		self.dist_to_hole = 0.2 # m
+		self.dist_to_hole = 3.0 # m
 
 		self.move_speed = 0.25
 		self.speed_when_wiggling = 0.05

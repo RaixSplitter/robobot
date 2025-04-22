@@ -12,10 +12,10 @@ class Roundabout(Task):
         self.topicCmd = "robobot/cmd/" # send to Teensy T0, T1, or teensy_interface
         self.topicRc  = service.topicCmd + "ti/rc"
         # task/job
-        self.job = self.get_to_pos
+        # self.job = self.get_to_pos
         # self.job = self.do_a_circle
         # self.job = self.do_a_const_circle
-        # self.job = self.get_out
+        self.job = self.get_out
         
         ### variables
         # robot
@@ -68,7 +68,7 @@ class Roundabout(Task):
     #     # print(f"target:{target:.2f}, current:{current:.2f}, e:{error:.2f}, u:{u:.2f}, u1:{max(min(u, 1.0), -1.0):.2f}")
     #     return max(min(u, 0.35), -0.35)
     
-    def drive(self, action, state : int, set_time : float | None = None, condition : bool = None):
+    def drive(self, action, state : int, set_time : float | None = None, condition : bool = None, enter_to_continue = False):
         # init time
         if self.set_turn_time == None:
             self.set_turn_time = time()
@@ -77,10 +77,12 @@ class Roundabout(Task):
             state += 1
             self.set_turn_time = None
             service.send(service.topicCmd + "ti/rc", "0.0 0.0")
+            if enter_to_continue:
+                input("Press enter")
         return state
 
     def get_to_pos(self):
-        sensor_d = ir.ir[0]
+        # sensor_d = ir.ir[0] # Error
         print("Running")
         if self.pos_state == -1:
             print("This Pos")
@@ -89,16 +91,16 @@ class Roundabout(Task):
         
         # get into position
         elif self.pos_state == 0:
-            self.pos_state = self.drive("0.25 1.2", self.pos_state, set_time = 2.0)
+            self.pos_state = self.drive("0.45 1.5", self.pos_state, set_time = 2.0)
         
         elif self.pos_state == 1: # drive straight, align to edge
-            self.pos_state = self.drive("0.15 0.0", self.pos_state, set_time = 5.5)
+            self.pos_state = self.drive("-0.3 0.0", self.pos_state, set_time = 2.5)
 
         elif self.pos_state == 2:
-            self.pos_state = self.drive("0.1 -0.3", self.pos_state, set_time = 1.7)
+            self.pos_state = self.drive("0.35 -0.3", self.pos_state, set_time = 2.5)
             
         elif self.pos_state == 3:
-            self.pos_state = self.drive("0.0 -1.0", self.pos_state, condition=(time() - self.set_turn_time) >= 1.0 and sensor_d <= 0.4)
+            self.pos_state = self.drive("0.0 -1.5", self.pos_state, set_time = 0.2)
             # if self.set_turn_time == None:
             #     self.set_turn_time = time()
             # if (time() - self.set_turn_time) >= 1.0 and sensor_d <= 0.4:
@@ -106,10 +108,10 @@ class Roundabout(Task):
             #     self.set_turn_time = None
             # service.send(service.topicCmd + "ti/rc", "0.0 -1.0") # turn # speed, angle
 
-        elif self.pos_state == 4:
-            self.pos_state = self.drive("0.0 1.0", self.pos_state, set_time = 0.3)
+        # elif self.pos_state == 4:
+        #     self.pos_state = self.drive("0.0 1.0", self.pos_state, set_time = 0.3)
             
-        elif self.pos_state == 5:
+        elif self.pos_state == 4:
             # change job
             service.send(service.topicCmd + "ti/rc", "0.0 0.0")
             # pose.tripBreset()
@@ -121,7 +123,7 @@ class Roundabout(Task):
     def do_a_circle(self):
         self.check_if_out()
                     
-        sensor_d = ir.ir[0]
+        # sensor_d = ir.ir[0]
         action = "0.20 0.0"
         
         if self.is_turning:
@@ -147,7 +149,7 @@ class Roundabout(Task):
         minv = 0.15
         maxv = 1.30
                 
-        sensor_d = ir.ir[0]
+        # sensor_d = ir.ir[0]
         if minv <= sensor_d and sensor_d <= maxv:
             service.send(service.topicCmd + "ti/rc", f"0.15 {0.40 + 0.05 * (1-(sensor_d-minv)/(maxv-minv))}") # turning        # speed, angle
             print("This", 0.40 + 0.05 * (1-(sensor_d-minv)/(maxv-minv)))
@@ -180,36 +182,34 @@ class Roundabout(Task):
         # Use time
         if self.exit_timer == None:
             self.exit_timer = time()
-        if abs(time() - self.exit_timer) >= 9.0:
+        # if abs(time() - self.exit_timer) >= 9.0: # old
+        if abs(time() - self.exit_timer) >= 6.0:
             service.send(service.topicCmd + "ti/rc", f"0.0 0.0")
             # input("Done")
             self.job = self.get_out
     
     def get_out(self):
-        sensor_s = ir.ir[0]
+        # sensor_s = ir.ir[0]
         sensor_f = ir.ir[1]
         if self.exit_state == 0: # drive straigt until sensor detect
-            action = "0.9 0.0"
+            action = "0.5 0.0"
             if sensor_f <= 0.2:
                 self.exit_state    = 1
                 self.set_turn_time = time()
 
         if self.exit_state == 1: # buffer for robot to align with wall
-            action = "0.4 0.0"
+            action = "0.3 0.0"
             if self.set_turn_time != None and (time() - self.set_turn_time) >= 1.0:
                 self.exit_state    = 2
                 self.set_turn_time = time()
         
-        elif self.exit_state in [2,3]: # turn until robot is parallel with wall
+        elif self.exit_state == 2: # turn until robot is parallel with wall
             action = "-0.05 -0.4"
-            if self.set_turn_time != None and (time() - self.set_turn_time) >= 1.5:
-                self.exit_state    = 3
-            if self.exit_state == 3 and sensor_s < 0.11:
-                self.exit_state    = 4
+            if self.set_turn_time != None and (time() - self.set_turn_time) >= 3.8:
                 self.set_turn_time = None
-                self.prev_d = sensor_s
-        
-        elif self.exit_state == 4:
+                self.exit_state    = 3
+                
+        elif self.exit_state == 3:
             action = "0.15 0.0"
             # wall align attempt
             # turn_action = 0.0
@@ -224,7 +224,7 @@ class Roundabout(Task):
             if edge.on_line:
                 service.send(service.topicCmd + "ti/rc", f"0.0 0.0")            
                 return TaskState.SUCCESS
-            self.prev_d = sensor_s
+            # self.prev_d = sensor_s
         service.send(service.topicCmd + "ti/rc", action) # speed, angle
         # print(self.exit_state)
 

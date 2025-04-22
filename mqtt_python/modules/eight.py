@@ -25,9 +25,9 @@ class Eight(Task):
         self.trip_can_be_reset = True
         
         # 'Parameters'
-        self.pid_values = (0.9, 0.0, 0.5)
+        # self.pid_values = (0.9, 0.0, 0.5)
         self.move_speed = 0.25
-        self.line_target = 0.5 # -2...2 where on the line to follow, we want to lean left to hit crossroad
+        self.line_target = 0.0 # -2...2 where on the line to follow, we want to lean left to hit crossroad
         self.distance_to_hopper = 0.25 # m
         self.backing_distance   = 0.1 # m
         self.right_turn_angle = -3.1 # radians
@@ -72,7 +72,7 @@ class Eight(Task):
                 self.turning_right = True
                 
         if self.turning_right:
-            # print("Turning right")
+            print("Turning right")
             service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn right # speed, angle
             if pose.tripBh <= self.right_turn_angle:
                 self.turning_right = False
@@ -80,7 +80,7 @@ class Eight(Task):
                 pose.tripBreset()
 
         if self.driving_into_position:
-            # print("Driving straight")
+            print("Driving straight")
             edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
             service.send(service.topicCmd + "ti/rc", "0.3 0.0") # drive forward # speed, angle
             if pose.tripB >= self.distance_to_eight:
@@ -108,7 +108,7 @@ class Eight(Task):
 
         if self.follow_line:
             # print("Following line")
-            edge.Kp, edge.Ki, edge.Kd = self.pid_values
+            # edge.Kp, edge.Ki, edge.Kd = self.pid_values
             edge.set_line_control_targets(
                 target_velocity=self.move_speed,
                 target_position=self.line_target # follow the left edge of the line to assure we take the right turn in the 8
@@ -139,7 +139,7 @@ class Eight(Task):
 
         if self.follow_line_again:
             # print("Following line")
-            edge.Kp, edge.Ki, edge.Kd = self.pid_values
+            # edge.Kp, edge.Ki, edge.Kd = self.pid_values
             edge.set_line_control_targets(
                 target_velocity=self.move_speed,
                 target_position=self.line_target # follow the left edge of the line to assure we take the right turn in the 8

@@ -109,4 +109,5 @@ class uniques:
 		(4,8): [Task.AXE, Task.GET_BALL, Task.DELIVER_BALL],
 		(5,100): [Task.EIGHT, Task.ROUNDABOUT],
 		(2,6): [Task.SEESAW,],
+		(10,3): [Task.DELIVER_GOLF_BALL,],
 	}
