@@ -31,8 +31,8 @@ all_poses = []
 setproctitle("mqtt-client")
 params = default_params
 robo_map = master_map(
-	# path = [2,6,10,3], 
-	path = [3,10,7,4,8], 
+	path = [2,6,10,3], 
+	# path = [3,10,7,4,8], 
 	turn = { 0:"U-TURN-NOT-IMPLEMENTED", 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT }, 
 	robot_param = params,
     # init_node=(1,S) 
@@ -40,8 +40,9 @@ robo_map = master_map(
 
 
 def loop(): 
-	state = State.START
+	# state = State.START
 	# state = State.TESTING
+	state = State.PHOTO_MODE
 	prev_state = None
 	n_frames = 0
 	n_frames_lost = 0
@@ -62,7 +63,7 @@ def loop():
 
 	# Calibration
 	time_between_images = 3.0 	# seconds
-	n_required_images = 3		# how many images to capture for calibration
+	n_required_images = 1		# how many images to capture for calibration
 
 	if not service.args.now:
 		print("% Ready, press start button")
@@ -145,6 +146,7 @@ def loop():
 			print(f"Taking image, {n_images}/{n_required_images} taken")
 			# time.sleep(time_between_images)
 			input() # enter in terminal to proceed
+			# if gpio.start():
 			take_image(save = True)
 
 			n_images += 1

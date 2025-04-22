@@ -52,7 +52,7 @@ default_params = {
 	"turn_speed": 0,				# should it drive as it turns | 0 = no driving
 	"move_speed": 0.30, 			# max 1
 	"skip_cross": 0,				# number of crossroads that are skipped (E1-4, E6-7)
-	"pid_values": (0.6, 0.0, 0.4), 	# p, i, d
+	"pid_values": (2.0, 0.0, 0.6), 	# p, i, d
 	"task_list": [],
 }
 
@@ -74,17 +74,18 @@ node_connections = { # n : ((np, from, to),...)
 
 class uniques:
 	map_speed = { # consistent order, use minmax
-    	minmax(1,2): 0.35, 
+    	# minmax(1,2): 0.35, 
+    	minmax(1,2): 0.20, # Temp for test 
 		minmax(1,4): 0.20,
 		minmax(4,5): 0.20,
 		minmax(2,6): 0.15,
 	}
 	map_turn = { 
 		(0,1,4): pi/5, 
-		(0,1,2): pi/5, 
+		(0,1,2): pi/4, 
 		# (2,3,10): pi/4,
-		(7,10,3): 3*pi/4, 
-		(7,10,9): 3*pi/4, 
+		(7,10,3): pi*1/2, # 3/4 too much 
+		(7,10,9): pi*1/2, # 3/4 too much 
 	}
 	map_turn_speed = {
 		minmax(1,2): 0.2,

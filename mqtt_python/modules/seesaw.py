@@ -28,7 +28,7 @@ class Seesaw(Task):
 		
 		# Move to ball
 		if self.moving_to_ball:
-			edge.Kp, edge.Ki, edge.Kd = (0.9, 0.0, 0.5) # TODO
+			# edge.Kp, edge.Ki, edge.Kd = (0.9, 0.0, 0.5) # TODO
 			edge.set_line_control_targets(
 				target_velocity=self.move_speed,
 				target_position=0.0
@@ -38,13 +38,13 @@ class Seesaw(Task):
 				print("putting arm down")
 				edge.set_line_control_targets(0,0)
 				service.send(service.topicCmd + "ti/rc", "0.0 0.0") # speed, angle
-				service.send(service.topicCmd + "T0/servo", "1 250 3000")
+				service.send(service.topicCmd + "T0/servo", "1 400 3000")
 				self.moving_to_ball = False
 				self.put_arm_down_start = time.time()
 		
 		# Check of we have picked up ball, if so done
 		if self.put_arm_down_start and self.time_to_put_down_arm < time.time() - self.put_arm_down_start:
-			service.send(service.topicCmd + "T0/servo", "0 200 3000")
+			service.send(service.topicCmd + "T0/svos", "0")
 			return TaskState.SUCCESS
 
 		return TaskState.EXECUTING
