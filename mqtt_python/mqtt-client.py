@@ -20,6 +20,10 @@ from map import master_map
 from modules.task import TaskState
 from _variables import State, default_params, Task
 
+
+MAX_TASK_TIME = 200
+
+
 all_poses = []
 
 # set title of process, so that it is not just called Python
@@ -168,7 +172,7 @@ def loop():
 			elif sub_state == TaskState.SUCCESS:
 				print(f"Succeeded subtask '{current_task}'")
 				del task_list[0]
-			if 100 < time_in_state(state_start_time):
+			if MAX_TASK_TIME < time_in_state(state_start_time):
 				print(f"Lost in task {current_task}")
 				state = State.END_PROGRAM
 			if len(task_list) == 0: # when all task are done
