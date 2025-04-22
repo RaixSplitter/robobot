@@ -62,12 +62,9 @@ def loop():
 		print("% Ready, press start button")
 		service.send(service.topicCmd + "T0/leds","16 30 30 0") # LED 16: yellow - waiting
 		
-	# put servo down
-	# service.send(service.topicCmd + "T0/svos", "1 -901 200")
- 
-	# service.send(service.topicCmd + "T0/servo", "1 -902 200")
-	# service.send(service.topicCmd + "T0/servo", "1, -900 200") # Down position
- 
+	# turn on servo and put servo down
+	service.send(service.topicCmd + "T0/svos", "1") 
+	service.send(service.topicCmd + "T0/servo", "1 -1023 200") 
  
 	# main state machine
 	edge.set_line_control_targets(0, 0)

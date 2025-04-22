@@ -38,8 +38,9 @@ class Task:
 	SEESAW     = Seesaw()
 	DELIVER_GOLF_BALL = DeliverGolfBall()
 	RETRIEVE_LUGGAGE = RetrieveLuggage()
-	GET_LUGGAGE = NavigateToPose(target = PoseTarget.ARUCO_LA)
+	GET_LUGGAGE = NavigateToPose(target = PoseTarget.ARUCO_LD)
 	DELIVER_LUGGAGE = NavigateToDropOff()
+	DELIVER_BALL = NavigateToDropOff(target=PoseTarget.C)
 	
 
 ### ROBOT VALUES ###
@@ -94,7 +95,7 @@ class uniques:
 		# minmax(1, 2) : (2.0, 0.0, 0.4)
 	}
 	delegate_task = {
-		(0,1): [Task.NAVIGATE_TO_POSE, Task.DELIVER_LUGGAGE],
+		(0,1): [Task.NAVIGATE_TO_POSE, Task.DELIVER_BALL],
 		# (0,1): [Task.GET_LUGGAGE, Task.DELIVER_LUGGAGE],
 		(4,8): [Task.AXE, Task.NAVIGATE_TO_POSE, ],
 		(5,100): [Task.EIGHT, Task.ROUNDABOUT],
