@@ -5,138 +5,290 @@ from sedge import edge
 from spose import pose
 from uservice import service
 from modules.ball_detection import *
-from modules.aruco import get_pose, drop_point
+from modules.aruco import get_pose, drop_point, ARUCO_MAP
 from scam import cam
-from math import pi
-import time 
+import time
+import logging
+from enum import Enum
+from dataclasses import dataclass
+from modules.navigate_to_pose import PoseTarget
 
+logging.basicConfig(
+    filename=f"logs/{__name__}.log",
+    filemode="w",
+    format="%(asctime)s,%(msecs)03d %(name)s %(levelname)s %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    level=logging.DEBUG,
+)
+LOGGER = logging.getLogger(__name__)
+
+# Add handler to print to stdout
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+console_handler.setFormatter(logging.Formatter("%(asctime)s %(name)s %(levelname)s %(message)s", "%Y-%m-%d %H:%M:%S"))
+LOGGER.addHandler(console_handler)
+
+
+MAX_TRAVEL_DISTANCE = 1
+
+class State(Enum):
+    VERIFY_POSITION 		    = 'VERIFY_POSITION'
+    NAVIGATE_TO_CORNER 			= 'NAVIGATE_TO_CORNER'
+    TARGET_TURN 			    = 'TARGET TURN'
+    TURN_LEFT 			    	= 'TURN LEFT'
+    TURN_RIGHT			    	= 'TURN RIGHT'
+    FORWARD 				    = 'FORWARD SOLDIER'
+    REVERSE				    	= 'MOONWALKING'
+    DELIVER 				    = 'PIZZADELIVERY'
+
+@dataclass
+class Target:
+    type : PoseTarget
+    x : float = 0.0
+    y : float = 0.0
+    z : float = 0.0
+    angle: float = 0.0
+    dist : float = 0.0
+    
+    def set_pose(self, pose):
+        x, y, z = pose
+        self.x, self.y, self.z = x, y, z
+        self.angle = np.arctan2(x, z)
+        self.dist = np.sqrt(x**2 + z**2)
+
+        if self.dist > MAX_TRAVEL_DISTANCE: # If distance is too large, the robot should finetune iteratively
+            self.dist /= 2
+        print(f"Target Distance Set to {self.dist}")
+  
 class NavigateToDropOff(Task):
-    def __init__(self):
-        self.dont_move = 0.0
-        self.drive_fast = 0.75
+    def __init__(self, target : PoseTarget = PoseTarget.A):
+        super().__init__(name="Navigate")
 
-        self.pose = None  # (x,y,z) x is left/right, y is up/down, z is inwards/outwards
-        self.pose_distances = []
-        self.aruco_poses = []
-        self.x = None
-        self.y = None
-        self.z = None
-        self.goal_heading = None
-        self.length_to_pose = None
-        self.distance_from_pose = 0.4
-        
-        self.trip_has_reset = False
-        self.rotate_to_goal_heading = True
+        self.SPEED = 0.3
+        self.TURNRATE = 0.5
+        self.ANGLEMARGIN = 0.05
+        self.DISTMARGIN = 0.01
+        self.OFFSET = -0.6 #Offset 11cm
+        self.DELIVERY_OFFSET = 0.10
+
+        self.states_q : list[State] = []
+        self.state: State = State.VERIFY_POSITION
+        self.default_state : State = State.VERIFY_POSITION
+        self.target = Target(target)
+        self.delivery = False
+        self.finish = False
         self.has_turned = False
-        self.drive_straight_to_pose = False
-        self.has_navigated_to_different_aruco = False
-        self.has_faced_center = False
-        self.has_turned_90 = False
-        self.has_gone_around = False
-
-        self.is_goal_aruco = False
-        self.goal_aruco = None # blue ball aruco
-        self.read_aruco = None
-        self.goal_ids = [14,15]
-
-    def loop(self):
-        if not self.trip_has_reset:
-            pose.tripBreset()
-            self.trip_has_reset = True
-            self.get_new_aruco_poses()
-
-        # To orient yourself with the goal rotate until heading (h) is:
-        # h = arctan(Z/X)
-        if self.goal_heading == None and self.length_to_pose == None:
-            self.goal_heading = np.arctan2(self.x, self.z)
-            self.length_to_pose = np.sqrt(self.x**2+self.z**2)
-        
-        self.is_aruco_drop_off()
-        if not self.is_goal_aruco:
-            self.rotate_to_current_goal_heading()
-            if self.length_to_pose >= self.distance_from_pose:
-                service.send(service.topicCmd + "ti/rc", "0.2 0.0") # drive straight # speed, angle
-                if pose.tripB >= self.length_to_pose - self.distance_from_pose:
-                    service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
-                    pose.tripBreset()
-            if not self.is_aruco_drop_off():
-                self.navigate_to_different_aruco()
-                if self.has_navigated_to_different_aruco:
-                    self.get_new_aruco_poses()
-
-        if self.is_goal_aruco:
-            self.drive_straight_to_pose = True
-
-        if self.drive_straight_to_pose:
-            service.send(service.topicCmd + "ti/rc", "0.2 0.0") # drive straight # speed, angle
-            if pose.tripB >= self.length_to_pose - self.distance_from_pose:
-                service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
-                pose.tripBreset()
-            self.drive_straight_to_pose = False
+        self.has_droven = False
+        self.has_reached_center = False
+  
+        self.actions = {
+            State.VERIFY_POSITION 		    : self.verify_position,
+            State.NAVIGATE_TO_CORNER 		: self.navigate_to_corner,
+            State.TARGET_TURN 			    : self.turn_to_target,
+            State.TURN_LEFT 			    : self.turn_left,
+            State.TURN_RIGHT			    : self.turn_right,
+            State.FORWARD 				    : self.forward,
+            State.REVERSE				    : self.reverse,
+            State.DELIVER 				    : self.deliver,
+        }
+    
+    #region helper functions
+    def loop(self, detection_target: str = "ball"):
+        action = self.actions[self.state]
+        error = action()
+  
+        if self.finish:
             return TaskState.SUCCESS
-            
-    def rotate_to_current_goal_heading(self):
 
-        if self.rotate_to_goal_heading and not self.has_turned:
-                if self.goal_heading < 0:
-                    service.send(service.topicCmd + "ti/rc", "0.0 0.8") # turn left # speed, angle
-                    if pose.tripBh <= self.goal_heading:
-                        self.has_turned = True
-                        service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
-
-                if self.goal_heading > 0:
-                    service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn right # speed, angle
-                    if pose.tripBh <= self.goal_heading:
-                        self.has_turned = True
-                        service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
-
+        if error:
+            LOGGER.error(f"Failed to execute state action: {self.state} for action {action}")
+            return TaskState.FAILURE
+      
         return TaskState.EXECUTING
 
-    def is_aruco_drop_off(self):
-        self.is_goal_aruco = self.read_aruco in self.goal_ids
-        return self.is_goal_aruco
-
-    def navigate_to_different_aruco(self):
-        # Turn Right
-        if not self.has_turned_90:
-            service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn right # speed, angle
-            # 90 grader
-            if pose.tripBh >= -pi/2:
-                self.has_turned_90 = True
-                service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
-                # Reset trip to track later
-                pose.tripBreset()
-        if self.has_turned_90 and not self.has_gone_around:
-            # Go around the sorting center
-            service.send(service.topicCmd + "ti/rc", "0.2 0.2") # turn right # speed, angle
-            # Cirka 50 cm
-            if pose.tripB >= 0.5:
-                self.has_gone_around = True
-                service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
-                # Reset trip to track later
-                pose.tripBreset()
-                self.has_gone_around = True
-        if self.has_turned_90 and self.has_gone_around and not self.has_faced_center:
-            # Turn left to face the sorting center
-            service.send(service.topicCmd + "ti/rc", "0.0 0.8") # turn right # speed, angle
-            # 45 degrees
-            if pose.tripBh >= pi/4:
-                self.has_faced_center = True
-                service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
-                # Reset trip to track later
-                pose.tripBreset()
+    def change_state(self) -> None:
+        if self.states_q: #Get next state
+            self.state = self.states_q.pop(0)
+        else: #Default state
+            self.state = self.default_state
+        LOGGER.debug(f"State: {self.state}, State Queue: {self.states_q}")
+        # LOGGER.debug(f"Target: {self.target}")
+    
+    def add_state(self, state) -> None:
+        self.states_q.append(state)
+  
+    def stop(self):
+        service.send(service.topicCmd + "ti/rc", "0.0 0.0")
         
+    def turn_to_target(self):
+        pose.tripBreset()
+        self.has_turned = True
+        if self.target.angle <= -self.ANGLEMARGIN: #If angle is less than margin
+            self.add_state(State.TURN_LEFT)
+            return False
+        elif self.target.angle >= self.ANGLEMARGIN:#If angle is more than margin
+            self.add_state(State.TURN_RIGHT)
+            return False
+        else: #Finished turning
+            return True
 
-    def get_new_aruco_poses(self):
-        ok, img, imgTime = cam.getImage()
-        self.aruco_poses = get_pose(img) # Use Aruco pose estimation function TODO
-        for aruco_pose_key in self.aruco_poses.items():
-            aruco_pose = self.aruco_poses[aruco_pose_key]
-            distance = np.linalg.norm(aruco_pose)
-            self.pose_distances.append((aruco_pose_key,distance))
-        closest_id, _ = min(self.pose_distances, key=lambda x: x[1])
-        self.read_aruco = closest_id
-        self.pose = drop_point(self.aruco_poses[closest_id])
-        self.x = self.pose[0]
-        self.y = self.pose[1]
-        self.z = self.pose[2]
+    def drive_to_target(self):
+        pose.tripBreset()
+        self.has_droven = True
+        
+        if self.target.dist - self.OFFSET <= -self.DISTMARGIN:
+            self.add_state(State.REVERSE)
+            return False
+        elif self.target.dist - self.OFFSET >= self.DISTMARGIN:
+            self.add_state(State.FORWARD)
+            return False
+        else:
+            return True
+   
+
+    def turn_left(self):
+        # self.stop() # for better acc
+        if pose.tripBh >= -self.target.angle: # If done turning
+            self.stop()
+            self.change_state()
+        else:
+            self.turn(left=True) #Turn Left 
+    
+    def turn_right(self):
+        # self.stop() # for better acc
+        
+        if pose.tripBh <= -self.target.angle: # If done turning
+            self.stop()
+            self.change_state()
+        else:
+            self.turn(left=False) # Turn right
+
+    def turn(self, left : bool = False):
+        """
+        Turns the robot either left or right
+
+        ARGS:
+            left : bool, if False turns left, if True turns right.
+        RETURN:
+            None
+          """
+        if left: #Turns left
+            service.send(service.topicCmd + "ti/rc", f"0.0 {self.TURNRATE}")
+      
+      
+        else: # Turns right
+            service.send(service.topicCmd + "ti/rc", f"0.0 {-self.TURNRATE}")
+    
+    def drive(self, reverse : bool = False):
+        """
+        Forward or backwards driving
+
+        ARGS:
+            reverse : bool, if False fowards driving, if True reverse driving.
+        RETURN:
+            None
+          """
+        if reverse: #Backwards
+            service.send(service.topicCmd + "ti/rc", f"{-self.SPEED} 0.0")
+        else: #Forward
+            service.send(service.topicCmd + "ti/rc", f"{self.SPEED} 0.0")
+   
+    def forward(self):
+         #Calculate missing distance
+        if pose.tripB >= self.target.dist - self.OFFSET:
+            self.stop()
+            self.change_state()
+        else:
+            self.drive()
+    
+    def reverse(self):
+        #Calculate missing distance
+        condition = abs(pose.tripB) >= abs(self.OFFSET - self.target.dist)
+        print(condition, pose.tripB, self.target.dist, self.OFFSET)
+        if condition:
+            self.stop()
+            self.change_state()
+        else:
+            self.drive(reverse = True)
+    
+    def deliver(self):
+        service.send(service.topicCmd + "T0/servo", "1, -900 1") # Up position
+        # self.finish = True
+        return 
+        #endregion
+  
+    def navigate_to_corner(self):
+        if not self.has_turned: #Examine if robot needs to turn towards target
+            self.turn_to_target()
+            self.add_state(State.NAVIGATE_TO_CORNER)
+            self.change_state()
+            return		
+
+        # VALIDATION STEP 2 DRIVE
+        elif not self.has_droven: #Examine if robot needs to drive to target or backoff
+            self.drive_to_target()
+            self.add_state(State.NAVIGATE_TO_CORNER)
+            self.change_state()
+            return
+        
+        elif self.delivery:
+            self.add_state(State.DELIVER)
+            self.change_state()
+            return
+        else:
+            self.add_state(State.VERIFY_POSITION)
+            self.change_state()
+            return
+
+    def verify_position(self):
+        ok, img, imgTime = cam.getImage() # Get image
+        # service.send(service.topicCmd + "T0/servo", "1 -901 200")
+
+        # Get pose
+        poses = get_pose(img, "captured_image.jpg")
+        # Filter poses to only include keys 'A', 'B', 'C', and 'D'
+        poses = {key: value for key, value in poses.items() if ARUCO_MAP[key][0] in {'A', 'B', 'C', 'D'}}
+        print(poses, self.target.type.value)
+        for key, value in poses.items():
+            if ARUCO_MAP[key][0] == self.target.type.value: #If target found
+                rvec, tvec, identifier = value
+                drop_pos = drop_point(rvec, tvec, delivery=True, offset= self.DELIVERY_OFFSET, show = True, img = img)
+                self.target.set_pose(drop_pos)
+                self.add_state(State.NAVIGATE_TO_CORNER)
+                self.has_turned = False
+                self.has_droven = False
+                self.has_reached_center = True
+                self.delivery = True
+                self.change_state()
+                LOGGER.info('FOUND TARGET')
+                return
+
+        if not poses: #If no poses turn
+            if self.has_reached_center:
+                self.turn(left = False)
+            else: self.turn()
+            return
+        elif len(poses) == 1:
+            rvec, tvec, identifier = list(poses.values())[0]
+            drop_pos = drop_point(rvec, tvec, delivery=False, offset=-0.5, show = True, img = img)
+            self.target.set_pose(drop_pos)
+            LOGGER.info('NO TARGET FOUND GOING TO NEXT CORNER', identifier)
+            self.add_state(State.NAVIGATE_TO_CORNER)
+            self.has_turned = False
+            self.has_droven = False
+            self.has_reached_center = True
+            self.change_state()
+            return
+        else: #If multiple poses, get the pose with the rightmost translation vector
+            # Get the pose with the largest x value
+            target_pose = max(poses.values(), key=lambda x: x[1][0][0])
+            rvec, tvec, identifier = target_pose
+            drop_pos = drop_point(rvec, tvec, delivery=False, offset=-0.5, show = True, img = img)
+            self.target.set_pose(drop_pos)
+            LOGGER.info('NO TARGET FOUND GOING TO NEXT CORNER M2', identifier)
+            self.add_state(State.NAVIGATE_TO_CORNER)
+            self.has_turned = False
+            self.has_droven = False
+            self.has_reached_center = True
+            self.change_state()
+            return

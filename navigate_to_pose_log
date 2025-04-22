@@ -1,0 +1,21 @@
+2025-04-22 17:38:32,217 modules.navigate_to_pose DEBUG State: State.TURN_RIGHT, State Queue: []
+2025-04-22 17:38:32,217 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=0.031687237680188496, y=-0.035642775330604386, z=0.2680397938219507, angle=0.11767225623815296, dist=0.2722495537869301)
+2025-04-22 17:38:34,032 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
+2025-04-22 17:38:34,033 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=0.031687237680188496, y=-0.035642775330604386, z=0.2680397938219507, angle=0.11767225623815296, dist=0.2722495537869301)
+2025-04-22 17:38:34,550 modules.navigate_to_pose DEBUG State: State.FORWARD, State Queue: []
+2025-04-22 17:38:34,551 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=0.001626979191610352, y=-0.032361108099896556, z=0.25846694404259535, angle=0.006294645178790751, dist=0.26049001812250167)
+2025-04-22 17:38:35,606 modules.navigate_to_pose DEBUG State: State.LOOKING_FOR_OBJECT, State Queue: []
+2025-04-22 17:38:35,606 modules.navigate_to_pose DEBUG Target: Target(type=<PoseTarget.BLUE_BALL: 'blue'>, x=0.001626979191610352, y=-0.032361108099896556, z=0.25846694404259535, angle=0.006294645178790751, dist=0.26049001812250167)
+2025-04-22 17:38:40,342 modules.navigate_to_drop_off DEBUG State: State.NAVIGATE_TO_CORNER, State Queue: []
+2025-04-22 17:38:40,343 modules.navigate_to_drop_off DEBUG State: State.TURN_LEFT, State Queue: [<State.NAVIGATE_TO_CORNER: 'NAVIGATE_TO_CORNER'>]
+2025-04-22 17:38:41,448 modules.navigate_to_drop_off DEBUG State: State.NAVIGATE_TO_CORNER, State Queue: []
+2025-04-22 17:38:41,497 modules.navigate_to_drop_off DEBUG State: State.FORWARD, State Queue: [<State.NAVIGATE_TO_CORNER: 'NAVIGATE_TO_CORNER'>]
+2025-04-22 17:38:46,071 modules.navigate_to_drop_off DEBUG State: State.NAVIGATE_TO_CORNER, State Queue: []
+2025-04-22 17:38:46,121 modules.navigate_to_drop_off DEBUG State: State.VERIFY_POSITION, State Queue: []
+2025-04-22 17:38:51,318 modules.navigate_to_drop_off DEBUG State: State.NAVIGATE_TO_CORNER, State Queue: []
+2025-04-22 17:38:51,319 modules.navigate_to_drop_off INFO FOUND TARGET
+2025-04-22 17:38:51,322 modules.navigate_to_drop_off DEBUG State: State.TURN_RIGHT, State Queue: [<State.NAVIGATE_TO_CORNER: 'NAVIGATE_TO_CORNER'>]
+2025-04-22 17:38:52,478 modules.navigate_to_drop_off DEBUG State: State.NAVIGATE_TO_CORNER, State Queue: []
+2025-04-22 17:38:52,529 modules.navigate_to_drop_off DEBUG State: State.FORWARD, State Queue: [<State.NAVIGATE_TO_CORNER: 'NAVIGATE_TO_CORNER'>]
+2025-04-22 17:38:57,553 modules.navigate_to_drop_off DEBUG State: State.NAVIGATE_TO_CORNER, State Queue: []
+2025-04-22 17:38:57,603 modules.navigate_to_drop_off DEBUG State: State.DELIVER, State Queue: []

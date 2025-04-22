@@ -20,6 +20,11 @@ from map import master_map
 from modules.task import TaskState
 from _variables import State, default_params, Task
 
+
+
+MAX_TASK_TIME = 200
+
+
 all_poses = []
 
 # set title of process, so that it is not just called Python
@@ -35,7 +40,7 @@ robo_map = master_map(
 
 def loop(): 
 	state = State.START
-	# state = State.TESTING
+	#state = State.TESTING
 	prev_state = None
 	n_frames = 0
 	n_frames_lost = 0
@@ -150,7 +155,6 @@ def loop():
 			# 	state = State.END_PROGRAM
 
 		elif state == State.SOLVING_TASK:
-			# print("Doing task")
 			task_list = params["task_list"]
 			if len(task_list) == 0:
 				print("Shouldnt happen you fucked up")
@@ -169,7 +173,7 @@ def loop():
 			elif sub_state == TaskState.SUCCESS:
 				print(f"Succeeded subtask '{current_task}'")
 				del task_list[0]
-			if 100 < time_in_state(state_start_time):
+			if MAX_TASK_TIME < time_in_state(state_start_time):
 				print(f"Lost in task {current_task}")
 				state = State.END_PROGRAM
 			if len(task_list) == 0: # when all task are done
@@ -184,8 +188,9 @@ def loop():
 
 		# NOTE: This state is the catch all for any misc testing code
 		elif state == State.TESTING:
-			params['current_task'] = Task.EIGHT
-			state = State.SOLVING_TASK
+			print("Kartoffelmel")
+			#params['current_task'] = Task.RETRIEVE_LUGGAGE
+			#state = State.SOLVING_TASK
 			# service.send(service.topicCmd + "T0/servo", "1 -900 0.8")
 
 			# current_task = Task.NAVIGATE
