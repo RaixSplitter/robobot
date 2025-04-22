@@ -21,9 +21,6 @@ from modules.task import TaskState
 from _variables import State, default_params, Task
 
 
-MAX_TASK_TIME = 200
-
-
 
 MAX_TASK_TIME = 200
 
