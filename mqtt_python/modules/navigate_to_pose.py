@@ -42,6 +42,7 @@ class PoseTarget(Enum):
 	B = 'B'
 	C = 'C'
 	D = 'D'
+	EXIT = 'EXIT'
 
 @dataclass
 class Target:
@@ -207,6 +208,18 @@ class NavigateToPose(Task):
 	 
 		ok, img, imgTime = cam.getImage() # Get image
 		service.send(service.topicCmd + "T0/servo", "1 -1023 200")
+  
+		if self.target.type == PoseTarget.EXIT:
+			poses = get_pose(img, save_path="aruco_img.png")
+			print(poses)
+			poses = poses.get(25, None)
+			if not poses:
+				self.turn()
+				return
+			rvec, tvec, identifier = poses
+			center_pos = drop_point(rvec, tvec, True, offset=-0.03, show = True, img = img)
+			print("heya", identifier)
+			self.target.set_pose(center_pos)
 
   
 		# Get pose
@@ -253,6 +266,10 @@ class NavigateToPose(Task):
 			self.change_state()
 			return
 		
+		if self.target.type == PoseTarget.EXIT:
+			self.finish = True
+			return
+
 		#endregion
 		print("GOTTA CAPTURE")
 		self.state = State.CAPTURE
