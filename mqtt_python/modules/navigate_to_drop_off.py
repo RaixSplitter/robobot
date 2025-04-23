@@ -224,8 +224,8 @@ class NavigateToDropOff(Task):
         #endregion
         
     def reverse2track(self):
-        condition = abs(pose.tripB) >= abs(self.reverse2track)
-        print(condition, pose.tripB, self.reverse2track)
+        condition = abs(pose.tripB) >= abs(self.REVERSE2TRACK_DIST)
+        print(condition, pose.tripB, self.REVERSE2TRACK_DIST)
         if condition:
             self.stop()
             self.finish = True

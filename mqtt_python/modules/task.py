@@ -5,6 +5,7 @@ class TaskState(Enum):
     FAILURE = 1
     LOST = 2
     SUCCESS = 3
+    SUCCESS_SKIP = 4
 
 class Task():
 
@@ -23,3 +24,5 @@ class Task():
     
     def has_failed(self):
         return TaskState.FAILURE
+    
+    

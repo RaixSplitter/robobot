@@ -22,7 +22,7 @@ class Axe(Task):
         self.free_durations = []       
 
         self.cross_time = 2.0
-        self.cross_length = 1.2
+        self.cross_length = 1.6
 
         self.is_running = False  
         self.current_trip = 0
@@ -34,7 +34,6 @@ class Axe(Task):
         self.turn_angle = 2
 
     def loop(self):
-        distance = ir.ir[1]
         if not self.checkpoint_set:
             self.check_point_trip = pose.tripB
             self.checkpoint_set = True
@@ -45,6 +44,7 @@ class Axe(Task):
                 service.send(service.topicCmd + "ti/rc", "0.0 0.0") # stop # speed, angle
                 self.drive_forward = False
         elif not self.drive_forward:
+            distance = ir.ir[1]
             if distance < 0.40:
                 if not self.obstacle_active:
                     # We cant go through the axe right now
@@ -82,18 +82,20 @@ class Axe(Task):
                 
                 if not self.is_running and len(self.free_durations) >= 1:
                     self.is_running = True
-                    edge.set_line_control_targets(
-                        target_velocity=self.drive_fast,
-                        target_position=0.0
-                    )
+                    # edge.set_line_control_targets(
+                    #     target_velocity=self.drive_fast,
+                    #     target_position=0.0
+                    # )
+                    service.send(service.topicCmd + "ti/rc", f"{self.drive_fast} 0.0")
                     
             if self.is_running:
                 if pose.tripB >= self.cross_length:
                     self.have_run_through = True
+                    service.send(service.topicCmd + "ti/rc", f"0.0 0.0")
 
             
             if self.have_run_through:
-                edge.set_line_control_targets(target_velocity=0.0, target_position=0.0)
+                # edge.set_line_control_targets(target_velocity=0.0, target_position=0.0)
                 pose.tripBreset()
                 self.turn_to_face_ball = True
                 self.have_run_through = False

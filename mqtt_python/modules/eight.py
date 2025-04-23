@@ -18,6 +18,7 @@ class Eight(Task):
         self.driving_into_position = False
         self.found_robot           = False
         self.waiting_for_ir        = False
+        self.driving_into_line     = False
         self.follow_line           = False
         self.waiting_for_ir_again  = False
         self.follow_line_again     = False
@@ -30,8 +31,8 @@ class Eight(Task):
         self.line_target = 0.0 # -2...2 where on the line to follow, we want to lean left to hit crossroad
         self.distance_to_hopper = 0.25 # m
         self.backing_distance   = 0.1 # m
-        self.right_turn_angle = -3.1 # radians
-        self.distance_to_eight = 0.6 + self.distance_to_hopper - self.backing_distance# m
+        self.right_turn_angle = 3.1 # radians
+        self.distance_to_eight = 0.5 + self.distance_to_hopper - self.backing_distance# m
         self.distances_to_drive_eight = [1.5, 1.1] # m, before and after waiting
         self.wait_times = [3.0, 3.0] # seconds 
         self.detect_robot_distance = 0.3 # meters
@@ -70,11 +71,14 @@ class Eight(Task):
             if pose.tripB <= self.distance_to_hopper - self.backing_distance:
                 self.backing = False
                 self.turning_right = True
+                self.timer = time.time()
                 
         if self.turning_right:
-            print("Turning right")
+            # print("Turning right")
             service.send(service.topicCmd + "ti/rc", "0.0 -0.8") # turn right # speed, angle
-            if pose.tripBh <= self.right_turn_angle:
+            print("Turning right",pose.tripBh)
+            # if abs(pose.tripBh) >= self.right_turn_angle:
+            if (time.time() - self.timer) > 2.2:
                 self.turning_right = False
                 self.driving_into_position = True
                 pose.tripBreset()
@@ -103,9 +107,17 @@ class Eight(Task):
                 self.waiting_for_ir = False
                 self.found_robot = False
                 self.action_start_time = None
-                self.follow_line = True
+                self.driving_into_line = True
                 service.send(service.topicCmd + "ti/rc", "0.0 0.0") # drive forward # speed, angle
                 pose.tripBreset()
+
+        if self.driving_into_line:
+            print("Driving to line")
+            edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
+            service.send(service.topicCmd + "ti/rc", "0.3 0.0") # drive forward # speed, angle
+            if pose.tripB >= 0.40:
+                self.driving_into_line = False
+                self.follow_line = True
 
         if self.follow_line:
             print("Following line")
