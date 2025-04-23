@@ -3,7 +3,7 @@ from _variables import N,E,S,W, deg, minmax, node_connections, uniques, default_
 
 ### Main ###
 class master_map:
-    def __init__(self, path : list, turn : dict, robot_param : dict, init_node = (0, N)):
+    def __init__(self, path : list, turn : dict, robot_param : dict, init_node = (0, N), n_skip = 0):
         ### initiate nodes
         self.nodes        = {n:path_node(n) for n in node_connections.keys()}
         self.current_node = self.nodes[init_node[0]]
@@ -22,6 +22,8 @@ class master_map:
                 nn, *out_in = np
                 self.nodes[n].add_path(self.nodes[nn], out_in)
         self.go_to(self.path[0])
+        if n_skip > 0:
+            self.skip(n_skips=n_skip)
     
     def next_action(self):
         # check for end reached
@@ -101,6 +103,10 @@ class master_map:
         
     def change_node(self, node_idx, new_node): # for custom path nodes
         self.nodes[node_idx] = new_node
+    
+    def skip(self, n_skips : int):
+        for _ in range(n_skips):
+            self.next_action()
     
 
 class path_node:

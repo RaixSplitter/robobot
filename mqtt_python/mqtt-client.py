@@ -31,12 +31,14 @@ all_poses = []
 setproctitle("mqtt-client")
 params = default_params
 robo_map = master_map(
-    # path = [8,],
+    # path = [3,10],
+    # path = [4,100],
+    path = [5,100,8,],
 	# path = [2,6,10,3], 
-	path = [3,10,7,4,8], 
+	# path = [3,10,7,4,8], 
 	turn = { 0:"U-TURN-NOT-IMPLEMENTED", 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT }, 
 	robot_param = params,
-    # init_node=(1,S) ###TESTING
+	n_skip=2
 )
 
 
@@ -103,7 +105,7 @@ def loop():
 					state = State.LOST
 			
 			# If we are at a crossroad, change node
-			if edge.on_crossroad and 1.0 < time.time() - last_crossroad_time:
+			if edge.on_crossroad and 1.5 < time.time() - last_crossroad_time:
 				last_crossroad_time = time.time()
 				if params["skip_cross"] > 0:
 					print("Skipped crossroad",params["skip_cross"])
@@ -129,6 +131,14 @@ def loop():
 			edge.set_line_control_targets(target_velocity = 0.0, target_position = 0.0)
 			service.send(service.topicCmd + "ti/rc", f"{params['turn_speed']} -0.8") # turn right # speed, angle
 			if abs(pose.tripBh) >= params["turn_angle"]:
+				state = State.FOLLOW_LINE
+				is_turning = False
+
+		elif state == State.U_TURN:
+			if not is_turning:
+				turn_timer = time.time()
+				is_turning = True
+			if (time.time() - turn_timer) > 1.1:
 				state = State.FOLLOW_LINE
 				is_turning = False
 
@@ -166,7 +176,7 @@ def loop():
 				continue
 			
 			current_task = task_list[0]
-			sub_state = current_task.loop()
+			sub_state,*s = current_task.loop()
 			if sub_state == TaskState.FAILURE:
 				print(f"Failed task {current_task}... Trying again")
 				pass
@@ -177,6 +187,11 @@ def loop():
 			elif sub_state == TaskState.SUCCESS:
 				print(f"Succeeded subtask '{current_task}'")
 				del task_list[0]
+			elif sub_state == TaskState.SUCCESS_SKIP:
+				print(f"Succeeded subtask '{current_task}'")
+				del task_list[0]
+				print(type(s),s)
+				robo_map.skip(s)
 			if MAX_TASK_TIME < time_in_state(state_start_time):
 				print(f"Lost in task {current_task}")
 				state = State.END_PROGRAM
