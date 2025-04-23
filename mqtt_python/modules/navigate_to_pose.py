@@ -74,6 +74,8 @@ class NavigateToPose(Task):
 		self.OFFSET_BALL = 0.16
 		self.OFFSET = 0.2 #Offset 11cm
 		self.OFFSET = 0.16 if target == PoseTarget.BLUE_BALL or target == PoseTarget.ORANGE_BALL else 0.2
+		if target == PoseTarget.EXIT:
+			self.OFFSET = 0.0
   
 		self.states_q : list[State] = []
 		self.state: State = State.LOOKING_FOR_OBJECT
