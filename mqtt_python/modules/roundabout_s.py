@@ -11,12 +11,11 @@ class Roundabout(Task):
         super().__init__(name='roundabout')
         self.topicCmd = "robobot/cmd/" # send to Teensy T0, T1, or teensy_interface
         self.topicRc  = service.topicCmd + "ti/rc"
-        
-        ### task/job/state
-        # self.job = self.get_to_pos
+        # task/job
+        self.job = self.get_to_pos
         # self.job = self.do_a_circle
         # self.job = self.do_a_const_circle
-        self.job = self.get_out
+        # self.job = self.get_out
         
         self.pos_state    = 0
         # self.circle_state = 0 # unused
@@ -64,22 +63,30 @@ class Roundabout(Task):
         
         # get into position
         elif self.pos_state == 0:
-            self.pos_state = self.drive("0.45 1.50", self.pos_state, set_time = 2.0)
+            self.pos_state = self.drive("0.45 1.5", self.pos_state, set_time = 1.8)
         
-        elif self.pos_state == 1: # drive straight, align to edge
-            self.pos_state = self.drive("-0.3 0.00", self.pos_state, set_time = 2.5)
+        elif self.pos_state == 1: 
+            self.pos_state = self.drive("-0.3 -0.1", self.pos_state, set_time = 2.0)
+            
+        elif self.pos_state == 2: 
+            self.pos_state = self.drive("-0.3 0.1", self.pos_state, set_time = 1.0)
 
-        elif self.pos_state == 2:
+        elif self.pos_state == 3:
             self.pos_state = self.drive("0.35 -0.3", self.pos_state, set_time = 2.5)
             
-        elif self.pos_state == 3:
-            self.pos_state = self.drive("0.00 -1.5", self.pos_state, set_time = 0.2)
-            # self.pos_state = self.drive("0.00 -1.5", self.pos_state, condition=(time() - self.set_turn_time) >= 1.0 and sensor_d <= 0.4)
+        elif self.pos_state == 4:
+            self.pos_state = self.drive("0.0 -1.5", self.pos_state, set_time = 0.4)
+            # if self.set_turn_time == None:
+            #     self.set_turn_time = time()
+            # if (time() - self.set_turn_time) >= 1.0 and sensor_d <= 0.4:
+            #     self.pos_state += 1
+            #     self.set_turn_time = None
+            # service.send(service.topicCmd + "ti/rc", "0.0 -1.0") # turn # speed, angle
 
         # elif self.pos_state == 4:
         #     self.pos_state = self.drive("0.0 1.0", self.pos_state, set_time = 0.3)
             
-        elif self.pos_state == 4:
+        elif self.pos_state == 5:
             # change job
             service.send(service.topicCmd + "ti/rc", "0.0 0.0")
             # pose.tripBreset()

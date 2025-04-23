@@ -22,8 +22,8 @@ class SEdge:
 	edge_update_interval = 0.0 # how many seconds between the edge sensor messages
 
 	# line detection levels
-	line_valid_threshold = 650 # 1000 is calibrated white
-	line_crossroad_valid_distance = 3 # How many sensors need to see line for it to be a crossroad
+	line_valid_threshold = 550 # 1000 is calibrated white
+	line_crossroad_valid_distance = 5 # How many sensors need to see line for it to be a crossroad
 	low_threshold = line_valid_threshold - 100
 
 	# line detection values
@@ -40,7 +40,7 @@ class SEdge:
 	Kp = 0.0
 	Ki = 0.0
 	Kd = 0.0
-	max_windup = 1
+	max_windup = 1.0
 	total_error = 0.0
 	previous_error = 0.0
 
@@ -236,16 +236,16 @@ class SEdge:
 
 		# detect if we are at a crossroad
 		# new cross detector: if the width is larger than self.line_crossroad_valid_distance
-		high_list = [i for i,v in enumerate(self.edge_n) if v >= self.line_valid_threshold]
+		high_list = [i for i,v in enumerate(self.edge_n) if v >= 350]
 		if len(high_list) > 0:
 			first_detector = high_list[0]
 			last_detector  = high_list[-1]
-			self.on_crossroad = (last_detector - first_detector) >= self.line_crossroad_valid_distance
+			self.on_crossroad = (last_detector - first_detector + 1) >= self.line_crossroad_valid_distance
 		else:
 			self.on_crossroad = False
 		# is line valid (high above threshold)
 		self.on_line = self.line_valid_threshold <= high
-		# print(f"On line: {self.on_line} \tOn cross: {self.on_crossroad} \t{self.edge_n}")
+		# print(f"On line: {self.on_line} \tOn cross: {self.on_crossroad} \t{self.edge_n} \t{high_list}")
 		# print(f"high: {self.high}, threshold: {self.lineValidThreshold}, over threshold: {self.lineValid}")
 
 		# find line position
