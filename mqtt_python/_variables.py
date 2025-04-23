@@ -54,7 +54,7 @@ class Task:
 default_params = {
 	"turn_angle": 1.5, 			# how long does a normal left or right turn take in seconds
 	"turn_speed": 0,				# should it drive as it turns | 0 = no driving
-	"move_speed": 0.30, 			# max 1
+	"move_speed": 0.25, 			# max 1
 	"skip_cross": 0,				# number of crossroads that are skipped (E1-4, E6-7)
 	"pid_values": (1.8, 0.0, 0.6), 	# p, i, d
 	"task_list": [],
@@ -114,7 +114,8 @@ class uniques:
 		# (0,1): [Task.TOPPLE_BASKET],
 		(4,8): [Task.AXE, Task.GET_BALL, Task.DELIVER_BALL, Task.EXIT],
 		# (5,100): [Task.EIGHT, Task.ROUNDABOUT],
-		(5,100): [Task.TOPPLE_BASKET],
+		(5,4): [Task.TOPPLE_BASKET],
+		# (5,100): [Task.TOPPLE_BASKET],
 		(2,6): [Task.SEESAW,],
 		(10,3): [Task.DELIVER_GOLF_BALL,],
 	}

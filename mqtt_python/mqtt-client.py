@@ -33,10 +33,10 @@ params = default_params
 robo_map = master_map(
     # path = [3,10],
     # path = [4,100],
-    path = [5,100,8,],
+    path = [5,4,8,],
 	# path = [2,6,10,3], 
 	# path = [3,10,7,4,8], 
-	turn = { 0:"U-TURN-NOT-IMPLEMENTED", 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT }, 
+	turn = { 0:State.FOLLOW_LINE, 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT }, 
 	robot_param = params,
 	n_skip=2
 )
@@ -176,7 +176,10 @@ def loop():
 				continue
 			
 			current_task = task_list[0]
-			sub_state,*s = current_task.loop()
+			other = None
+			sub_state = current_task.loop()
+			if type(sub_state) == tuple:
+				sub_state, other = sub_state
 			if sub_state == TaskState.FAILURE:
 				print(f"Failed task {current_task}... Trying again")
 				pass
@@ -190,8 +193,8 @@ def loop():
 			elif sub_state == TaskState.SUCCESS_SKIP:
 				print(f"Succeeded subtask '{current_task}'")
 				del task_list[0]
-				print(type(s),s)
-				robo_map.skip(s)
+				print(type(other),other)
+				robo_map.skip(other)
 			if MAX_TASK_TIME < time_in_state(state_start_time):
 				print(f"Lost in task {current_task}")
 				state = State.END_PROGRAM

@@ -15,6 +15,7 @@ class TOPPLE_BASKET(Task):
         self.toppling_hopper       = False
         self.backing               = False
         self.turning_right         = False
+        self.turning_right_again   = False
         self.driving_into_position = False
         self.found_robot           = False
         self.waiting_for_ir        = False
@@ -52,10 +53,22 @@ class TOPPLE_BASKET(Task):
         if not self.has_initted:
             pose.tripBreset()
             self.has_initted = True
-            self.toppling_hopper = True
+            self.turning_right = True
             service.send(service.topicCmd + "T0/servo", "1, -500 200") # Medium position
+            self.timer = time.time()
+            
+        if self.turning_right:
+            # print("Turning right")
+            service.send(service.topicCmd + "ti/rc", "0.0 0.8") # turn right # speed, angle
+            # print("Turning right")
+            # if abs(pose.tripBh) >= self.right_turn_angle:
+            if (time.time() - self.timer) > 5.0:
+                self.turning_right = False
+                self.toppling_hopper = True
 
         if self.toppling_hopper:
+            service.send(service.topicCmd + "ti/rc", "0.0 0.0") # drive forward # speed, angle
+            input()
             # print("Toppling hopper")
             service.send(service.topicCmd + "ti/rc", "0.25 0.0") # drive forward # speed, angle
             if pose.tripB >= self.distance_to_hopper:
@@ -70,17 +83,17 @@ class TOPPLE_BASKET(Task):
             service.send(service.topicCmd + "ti/rc", "-0.2 0.0") # turn right # speed, angle
             if pose.tripB <= self.distance_to_hopper - self.backing_distance:
                 self.backing = False
-                self.turning_right = True
+                self.turning_right_again = True
                 self.timer = time.time()
                 
-        if self.turning_right:
+        if self.turning_right_again:
             # print("Turning right")
             service.send(service.topicCmd + "ti/rc", "0.0 0.8") # turn right # speed, angle
             # print("Turning right")
             # if abs(pose.tripBh) >= self.right_turn_angle:
             if (time.time() - self.timer) > 2.0:
-                self.turning_right = False
-                self.driving_into_position = True
+                self.turning_right_again = False
+                # return TaskState.SUCCESS_SKIP, 2
                 return TaskState.SUCCESS
 
 

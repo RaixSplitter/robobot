@@ -27,6 +27,7 @@ class master_map:
     
     def next_action(self):
         # check for end reached
+        print(self.queue)
         if len(self.queue) == 1:
             print("Target reached")
             self.queue = None
@@ -107,6 +108,8 @@ class master_map:
     def skip(self, n_skips : int):
         for _ in range(n_skips):
             self.next_action()
+        print(self.current_node.n)
+    
     
 
 class path_node:
