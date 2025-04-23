@@ -17,21 +17,34 @@ class Roundabout(Task):
         # self.job = self.do_a_const_circle
         # self.job = self.get_out
         
-        self.pos_state    = 0
-        # self.circle_state = 0 # unused
-        self.exit_state   = 0
-        
         ### variables
         # robot
+        self.robot_speed = 0.1
+        self.turn_time   = 0.5 # s
+        self.Kp = 1.0
+        self.Ki = 0.0
+        self.Kd = 0.4
         
+        # state
+        self.pos_state = 0
+        self.circle_state = 0 # 0 = pre detect, 1 = within range, 2 = out of range
+        self.exit_state = 0
+        # self.current_action = [f"{self.robot_speed} 0.0", f"{self.robot_speed} 0.30", f"0.0 0.7"] # do_a_circle
         # self.current_action = [f"{self.robot_speed} 0.0", f"{self.robot_speed} 0.25", f"0.0 0.5"] # do_a_circle
+        self.current_action = [f"{self.robot_speed} 0.0", f"{self.robot_speed} 0.25", f"0.0 0.5"] # do_a_circle
         
+        
+        self.is_turning     = False
         self.set_turn_time  = None
         self.exit_timer     = None
-        # self.dt             = max(ir.irInterval / 1000.0, 1e-6) # Avoid extremely small dt
-        # self.prev_d         = 99
-        # self.saved_angle    = -100
-        # self.angle_changed  = False
+        self.dt             = max(ir.irInterval / 1000.0, 1e-6) # Avoid extremely small dt    
+        self.prev_d         = 99
+        self.saved_angle    = -100
+        self.angle_changed  = False
+        
+        # targets
+        self.object_dist = (0.2, 0.4) # min/max
+        self.outer_min_dist = 0.1
     
     def debug(self):
         return
@@ -39,6 +52,21 @@ class Roundabout(Task):
         print("circle state:", self.circle_state, "ir distance:", ir.ir[0], "bh:", pose.tripBh)
         input()
         service.send(service.topicCmd + "ti/rc", self.current_action[0])
+
+    # def pid_loop(self, target: float, current: float) -> float:
+    #     error = target - current
+    #     self.cumulative_error += error * self.dt
+    #     # Potentially clamp integrator more tightly or differently
+    #     self.cumulative_error = max(min(self.cumulative_error, 1.0), -1.0)
+
+    #     diff_error = (error - self.previous_error) / self.dt
+    #     self.previous_error = error
+
+    #     u = (self.Kp * error) \
+    #       + (self.Ki * self.cumulative_error) \
+    #       + (self.Kd * diff_error)
+    #     # print(f"target:{target:.2f}, current:{current:.2f}, e:{error:.2f}, u:{u:.2f}, u1:{max(min(u, 1.0), -1.0):.2f}")
+    #     return max(min(u, 0.35), -0.35)
     
     def drive(self, action, state : int, set_time : float | None = None, condition : bool = None, enter_to_continue = False):
         # init time
@@ -95,43 +123,43 @@ class Roundabout(Task):
             self.job = self.do_a_const_circle
 
     ### Circle testing ###
-    # def do_a_circle(self, outer_min_dist = 0.1):
-    #     self.check_if_out()
+    def do_a_circle(self):
+        self.check_if_out()
                     
-    #     # sensor_d = ir.ir[0]
-    #     action = "0.20 0.0"
+        # sensor_d = ir.ir[0]
+        action = "0.20 0.0"
         
-    #     if self.is_turning:
-    #         action = "0.20 1.1"
-    #         if self.set_turn_time == None and sensor_d >= outer_min_dist:
-    #             self.set_turn_time = time()
-    #         if self.set_turn_time != None and (time() - self.set_turn_time) >= 0.5:
-    #             print("Turning off", sensor_d >= outer_min_dist)
-    #             self.is_turning = False
-    #             self.set_turn_time = None
-    #             self.prev_d = 99
+        if self.is_turning:
+            action = "0.20 1.1"
+            if self.set_turn_time == None and sensor_d >= self.outer_min_dist:
+                self.set_turn_time = time()
+            if self.set_turn_time != None and (time() - self.set_turn_time) >= self.turn_time:
+                print("Turning off", sensor_d >= self.outer_min_dist)
+                self.is_turning = False
+                self.set_turn_time = None
+                self.prev_d = 99
         
-    #     elif sensor_d > self.prev_d and sensor_d < 0.5:
-    #         # print("Turning on")
-    #         # action = "0.15 1.0"
-    #         self.is_turning = True
-    #     self.prev_d = sensor_d
+        elif sensor_d > self.prev_d and sensor_d < 0.5:
+            # print("Turning on")
+            # action = "0.15 1.0"
+            self.is_turning = True
+        self.prev_d = sensor_d
         
-    #     service.send(service.topicCmd + "ti/rc", action) # speed, angle
+        service.send(service.topicCmd + "ti/rc", action) # speed, angle
 
-    # def do_a_simpler_circle(self):
-    #     self.check_if_out()
-    #     minv = 0.15
-    #     maxv = 1.30
+    def do_a_simpler_circle(self):
+        self.check_if_out()
+        minv = 0.15
+        maxv = 1.30
                 
-    #     # sensor_d = ir.ir[0]
-    #     if minv <= sensor_d and sensor_d <= maxv:
-    #         service.send(service.topicCmd + "ti/rc", f"0.15 {0.40 + 0.05 * (1-(sensor_d-minv)/(maxv-minv))}") # turning        # speed, angle
-    #         print("This", 0.40 + 0.05 * (1-(sensor_d-minv)/(maxv-minv)))
-    #         pass
-    #     else:
-    #         service.send(service.topicCmd + "ti/rc", "0.15 0.0") # drive straight # speed, angle
-    #         pass
+        # sensor_d = ir.ir[0]
+        if minv <= sensor_d and sensor_d <= maxv:
+            service.send(service.topicCmd + "ti/rc", f"0.15 {0.40 + 0.05 * (1-(sensor_d-minv)/(maxv-minv))}") # turning        # speed, angle
+            print("This", 0.40 + 0.05 * (1-(sensor_d-minv)/(maxv-minv)))
+            pass
+        else:
+            service.send(service.topicCmd + "ti/rc", "0.15 0.0") # drive straight # speed, angle
+            pass
     
     def do_a_const_circle(self):
         self.check_if_out()
@@ -144,7 +172,7 @@ class Roundabout(Task):
     
     ### Drive Out ###
     def check_if_out(self):
-        # Use drived distance
+        # Use distance
         # if pose.tripB >= self.drive_dist:
         
         # Use angle ## Jank due to pose.tripBh after reset 
@@ -164,6 +192,7 @@ class Roundabout(Task):
             self.job = self.get_out
     
     def get_out(self):
+        # sensor_s = ir.ir[0]
         sensor_f = ir.ir[1]
         if self.exit_state == 0: # drive straigt until sensor detect
             action = "0.5 0.0"
@@ -185,14 +214,25 @@ class Roundabout(Task):
                 
         elif self.exit_state == 3:
             action = "0.15 0.0"
+            # wall align attempt
+            # turn_action = 0.0
+            # if sensor_s - self.prev_d >= 0.05:
+            #     turn_action = -0.1
+            # elif sensor_s - self.prev_d <= 0.05:
+            #     turn_action = 0.1
+            # if sensor_s > 0.1:
+            #     turn_action = turn_action + 0.11
+            # action = f"0.15 {turn_action}"
                 
             if edge.on_line:
                 service.send(service.topicCmd + "ti/rc", f"0.0 0.0")            
                 return TaskState.SUCCESS
+            # self.prev_d = sensor_s
         service.send(service.topicCmd + "ti/rc", action) # speed, angle
         # print(self.exit_state)
 
     def loop(self):
-        # print("circle state:", self.circle_state, "bh:", pose.tripBh)
+        # print("circle state:", self.circle_state, "ir distance:", ir.ir[0], "bh:", pose.tripBh)
+        print("ir distance:", ir.ir[0], ir.ir[0] >= self.outer_min_dist)
         self.job()
         return TaskState.EXECUTING

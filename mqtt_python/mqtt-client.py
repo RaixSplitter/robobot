@@ -33,12 +33,12 @@ params = default_params
 robo_map = master_map(
     # path = [3,10],
     # path = [4,100],
-    path = [5,4,8,],
+    path = [2,6,5,4,8,],
 	# path = [2,6,10,3], 
 	# path = [3,10,7,4,8], 
 	turn = { 0:State.FOLLOW_LINE, 90:State.TURN_RIGHT, 180:State.FOLLOW_LINE, 270:State.TURN_LEFT }, 
 	robot_param = params,
-	n_skip=2
+	# n_skip=2
 )
 
 
@@ -191,7 +191,7 @@ def loop():
 				print(f"Succeeded subtask '{current_task}'")
 				del task_list[0]
 			elif sub_state == TaskState.SUCCESS_SKIP:
-				print(f"Succeeded subtask '{current_task}'")
+				print(f"Succeeded subtask with skip '{current_task}'")
 				del task_list[0]
 				print(type(other),other)
 				robo_map.skip(other)

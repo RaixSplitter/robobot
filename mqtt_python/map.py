@@ -106,9 +106,11 @@ class master_map:
         self.nodes[node_idx] = new_node
     
     def skip(self, n_skips : int):
+        print("First node", self.current_node.n)
         for _ in range(n_skips):
             self.next_action()
-        print(self.current_node.n)
+            print(self.current_node.n)
+        print("C node", self.current_node.n)
     
     
 
